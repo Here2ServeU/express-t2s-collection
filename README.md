@@ -2,9 +2,9 @@
 
 ## Overview (Situation)
 
-This repository serves as the **monorepo** for the evolving Express-based web applications that power the mission of **Transformed 2 Succeed (T2S)**. Each version (`v1`, `v2`, etc.) represents a progressive iteration of the Node.js + Express app as we move from MVP to a production-grade, cloud-native, DevOps-enabled platform.
+This repository serves as the monorepo for the evolving Express-based web applications that power the mission of **Transformed 2 Succeed (T2S)**. Each version (`v1`, `v2`, etc.) represents a progressive iteration of the Node.js + Express app as we move from MVP to a production-grade, cloud-native, DevOps-enabled platform.
 
-Our long-term vision is to create a **mentorship system** that is:
+Our long-term vision is to create a mentorship system that is:
 - Containerized using Docker
 - Deployable to AWS (ECR, ECS, EKS)
 - Monitored and observable
@@ -16,12 +16,12 @@ Our long-term vision is to create a **mentorship system** that is:
 ## Goals (Task)
 
 - Containerize each app version with Docker
-- Push container images to **AWS ECR**
-- Deploy via **ECS Fargate**, then migrate to **EKS**
-- Implement **CI/CD** using GitHub Actions
-- Add **observability** and monitoring (Grafana, Prometheus, X-Ray)
-- Enable **DevSecOps** scanning (Trivy, Checkov)
-- Support **authentication, email notifications**, and mentorship automation
+- Push container images to AWS ECR
+- Deploy via ECS Fargate, then migrate to EKS
+- Implement CI/CD using GitHub Actions
+- Add observability and monitoring (Grafana, Prometheus, X-Ray)
+- Enable DevSecOps scanning (Trivy, Checkov)
+- Support authentication, email notifications, and mentorship automation
 
 ---
 
@@ -29,12 +29,14 @@ Our long-term vision is to create a **mentorship system** that is:
 
 Each version directory (e.g. `express-t2s-app-v1`) includes:
 
-- `Node.js + Express` backend server
+- Node.js + Express backend server
 - Public static asset folder and HTML signup form
 - Git integration with branching and version tracking
 - CI/CD-ready project structure with Docker support
 
-#### Run Locally
+---
+
+## Run Locally
 
 ```bash
 cd express-t2s-app-v1  # or any version
@@ -42,37 +44,37 @@ npm install
 node index.js
 ```
 
-Visit: [http://localhost:3000](http://localhost:3000)
+Visit: http://localhost:3000
 
 ---
 
 ## Action Plan (What’s Next)
 
 ### Phase 1: Containerization & CI/CD
-- [ ] Create Dockerfile & .dockerignore for each version
-- [ ] Push images to ECR
-- [ ] Build GitHub Actions workflows
+- Create Dockerfile & .dockerignore for each version
+- Push images to ECR
+- Build GitHub Actions workflows
 
 ### Phase 2: AWS ECS Deployment
-- [ ] Set up ECS with Fargate + Load Balancer
-- [ ] Enable HTTPS + Route 53 domain
+- Set up ECS with Fargate + Load Balancer
+- Enable HTTPS + Route 53 domain
 
 ### Phase 3: EKS + GitOps
-- [ ] Create EKS with Terraform
-- [ ] Use Helm + ArgoCD for Kubernetes deployments
+- Create EKS with Terraform
+- Use Helm + ArgoCD for Kubernetes deployments
 
 ### Phase 4: DevSecOps & IAM
-- [ ] Trivy + Checkov integration
-- [ ] Use AWS WAF, IAM, and Secrets Manager
+- Trivy + Checkov integration
+- Use AWS WAF, IAM, and Secrets Manager
 
 ### Phase 5: Observability
-- [ ] Prometheus & Grafana Dashboards
-- [ ] CloudWatch Logs and AWS X-Ray
+- Prometheus & Grafana Dashboards
+- CloudWatch Logs and AWS X-Ray
 
 ### Phase 6: Mentorship Automation
-- [ ] Log mentee form data
-- [ ] Send emails on signup
-- [ ] Store submissions securely
+- Log mentee form data
+- Send emails on signup
+- Store submissions securely
 
 ---
 
@@ -80,13 +82,28 @@ Visit: [http://localhost:3000](http://localhost:3000)
 
 ```
 express-t2s-app/
-├── express-t2s-app-v1/      # MVP version
+├── express-t2s-app-v1/      
 │   ├── public/
-│   ├── index.js
+│   └── index.js
+│
+├── express-t2s-app-v2/      
 │   ├── Dockerfile
-│   └── ...
-├── express-t2s-app-v2/      # Enhanced version
-│   ├── ...
+│   └── .dockerignore
+│
+├── express-t2s-app-v3/      
+│   └── .github/workflows/ci.yml
+│
+├── express-t2s-app-v4/      
+│   ├── helm-chart/
+│   └── terraform/
+│
+├── express-t2s-app-v5/      
+│   ├── trivy-reports/
+│   ├── checkov-config/
+│   ├── prometheus/
+│   ├── grafana/
+│   └── argo-cd/
+│
 ├── .gitignore
 └── README.md
 ```
@@ -95,8 +112,7 @@ express-t2s-app/
 
 ## Outcome (Result)
 
-By the end of this project, we’ll have a **DevOps-powered, production-grade platform** supporting:
-
+By the end of this project, we’ll have a DevOps-powered, production-grade platform supporting:
 - CI/CD & GitOps
 - Secure, observable infrastructure
 - Containerized, scalable deployments
@@ -104,26 +120,59 @@ By the end of this project, we’ll have a **DevOps-powered, production-grade pl
 
 ---
 
-## Author
+## Local Deployment Steps
 
-**Emmanuel Naweji, 2025**  
-Cloud | DevOps | SRE | FinOps | AI Engineer  
-Helping businesses modernize infrastructure and mentoring the next generation of engineers through real-world projects.
+1. Clone the repository:
+```bash
+git clone git@github.com:Here2ServeU/express-t2s-app.git
+cd express-t2s-app/express-t2s-app-v1
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the application:
+```bash
+node index.js
+```
+
+4. Open your browser at:
+```
+http://localhost:3000
+```
 
 ---
 
-## Connect With Me
+## World-Case Scenario Deployment (Cloud)
 
-- [LinkedIn](https://www.linkedin.com/in/ready2assist/)
-- [GitHub](https://github.com/Here2ServeU)
-- [Medium](https://medium.com/@here2serveyou)
+1. Build Docker image:
+```bash
+docker build -t t2s-web:v1 .
+```
 
----
+2. Authenticate with AWS:
+```bash
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <your-account-id>.dkr.ecr.us-east-1.amazonaws.com
+```
 
-## Book a Free Consultation
+3. Tag & push image to ECR:
+```bash
+docker tag t2s-web:v1 <your-ecr-repo-uri>:v1
+docker push <your-ecr-repo-uri>:v1
+```
 
-Want help with GitOps, Terraform, or Kubernetes scaling?  
-👉 [Schedule a free 1:1 consultation](https://bit.ly/letus-meet)
+4. Deploy on ECS or EKS using Terraform and Helm (in v3–v5 folders)
+
+5. Monitor via:
+   - AWS CloudWatch
+   - Grafana dashboards
+   - AWS X-Ray traces
+
+6. Trigger CI/CD via GitHub Actions
+
+7. Onboard mentees automatically through form + email integration
 
 ---
 
