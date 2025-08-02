@@ -1,0 +1,22 @@
+# Ignore node_modules - it's recreated by npm install
+node_modules/
+
+# Ignore logs
+logs
+*.log
+npm-debug.log*
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore environment/config files if added later
+.env
+.env.local
+.env.*.local
+
+# Ignore lock file if you prefer yarn
+yarn.lock
+
+# Optional: Ignore VS Code settings
+.vscode/
