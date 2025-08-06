@@ -184,6 +184,7 @@ python delete_all_versions.py
 ```
 
 # Deleting the other Resources
+```
 cd ecr (or ecs/eks)
 terraform destroy --auto-approve
 ```
