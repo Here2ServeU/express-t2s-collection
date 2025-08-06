@@ -156,7 +156,8 @@ terraform apply
 ## Clean Up
 ```bash
 # Deleting the Backend
-cd .. #To move up to express-t2s-app-v4/terraform
+cd ..                                        #To move up to express-t2s-app-v4/terraform
+aws s3 rm s3://emmanuel-tf-state --recursive #To clean bucket via script (non-versioned only)
 terraform destroy --auto-approve
 
 # Deleting the other Resources
