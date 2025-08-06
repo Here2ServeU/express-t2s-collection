@@ -5,8 +5,13 @@ provider "aws" {
 resource "aws_s3_bucket" "tf_backend" {
   bucket = var.bucket_name
   acl    = "private"
-  versioning {
-    enabled = true
+}
+
+resource "aws_s3_bucket_versioning" "tf_backend_versioning" {
+  bucket = aws_s3_bucket.tf_backend.id
+
+  versioning_configuration {
+    status = "Enabled"
   }
 }
 
