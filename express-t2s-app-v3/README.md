@@ -1,195 +1,162 @@
-# Express T2S App – Full DevOps Guide (Beginner Friendly)
+# Express T2S App Monorepo
 
-This project walks you through building and deploying a containerized Node.js Express application to AWS using real-world DevOps tools and best practices.
+## Overview
 
-## What You’ll Learn
-- How to containerize an app using Docker
-- How to push images to AWS Elastic Container Registry (ECR)
-- How to deploy Docker containers to AWS Elastic Container Service (ECS)
-- How to use Terraform to provision cloud infrastructure
-- How to manage infrastructure state using a remote S3 backend
-- How to automate workflows using Bash and Python scripts
+This repository is the monorepo for the evolving Express-based web applications that support the mission of **Transformed 2 Succeed (T2S)**. Each version (`v1`, `v2`, etc.) represents a progressive stage of the Node.js + Express app — from MVP to a production-ready, cloud-native, DevOps-enabled platform.
 
----
-
-## Project Structure
-
-express-t2s-app/
-- app/                           → Node.js Express application source code
-  - Dockerfile                   → Instructions to build Docker image
-  - index.js                     → Entry point (sample Express app)
-
-- scripts/                       → Bash and Python automation scripts
-  - push_ecr.sh                  → Push Docker image to ECR (Bash)
-  - push_ecr.py                  → Push Docker image to ECR (Python)
-  - deploy_ecs.sh                → Deploy Docker image to ECS (Bash)
-  - deploy_ecs.py                → Deploy Docker image to ECS (Python)
-
-- terraform/                     → Infrastructure-as-code using Terraform
-  - main.tf                      → Defines ECR, ECS cluster/service/task
-  - backend.tf                   → Remote S3 backend for state management
-  - variables.tf                 → Input variables for modularity
-  - terraform.tfvars             → Actual values for variables
-  - outputs.tf                   → Outputs like ECR repo URL and ECS ARNs
+Our long-term vision is to build a mentorship system that is:
+- Containerized using Docker
+- Deployed via Terraform on AWS (ECR, ECS, EKS)
+- Monitored and observable
+- Secured with IAM, WAF, and DevSecOps scanning
+- Scalable, cost-efficient, and highly available
 
 ---
 
-## Step-by-Step Guide for Beginners
+## Goals
 
-### 1. Provision Infrastructure Using Terraform
+- Containerize each app version using Docker
+- Push container images to AWS ECR
+- Deploy using Terraform with ECS and EKS
+- Implement GitHub Actions for CI/CD
+- Add observability and monitoring (Grafana, Prometheus, CloudWatch)
+- Integrate DevSecOps (Trivy, Checkov)
+- Enable secure, automated mentorship workflows
 
-#### Step 1. Configure Remote Backend (terraform/backend.tf)
+---
+
+## Versions and Status
+
+Each app version is built on DevOps principles and infrastructure-as-code:
+
+- `express-t2s-app-v1`: Basic Node.js + Express app
+- `express-t2s-app-v2`: Adds Docker support and CI pipeline structure
+- `express-t2s-app-v3`: Includes GitHub Actions and AWS ECR deployment
+- `express-t2s-app-v4`: Adds ECS Fargate and Terraform infrastructure (Coming Out Soon)
+- `express-t2s-app-v5`: Adds EKS with ArgoCD, observability stack (Coming Out Soon)
+- `express-t2s-app-v6`: Adds AI-based automation and intelligent monitoring (Coming Out Soon)
+
+---
+
+## Repo Structure
+
 ```
+express-t2s-app/
+├── express-t2s-app-v1/
+│   ├── public/
+│   └── index.js
+│
+├── express-t2s-app-v2/
+│   ├── Dockerfile
+│   └── .dockerignore
+│
+├── express-t2s-app-v3/
+│   └── .github/workflows/ci.yml
+│
+├── express-t2s-app-v4/
+│   ├── terraform/
+│   │   ├── backend/
+│   │   │   └── backend.tf
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── ...
+│
+├── express-t2s-app-v5/
+│   ├── terraform/
+│   │   ├── backend/
+│   │   │   └── backend.tf
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── ...
+│
+├── express-t2s-app-v6/
+│   ├── terraform/
+│   │   ├── backend/
+│   │   │   └── backend.tf
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── ...
+│
+└── README.md
+```
+
+---
+
+## Remote Backend Setup
+
+To enable collaborative and secure Terraform state management, each version uses an **S3 backend with DynamoDB locking**:
+
+1. Manually create or bootstrap:
+   - S3 bucket: `t2s-terraform-state`
+   - DynamoDB table: `t2s-terraform-lock`
+
+2. Add this to `terraform/backend/backend.tf` for the version:
+
+```hcl
 terraform {
   backend "s3" {
-    bucket = "your-terraform-backend-bucket"
-    key    = "state/ecs-ecr/terraform.tfstate"
-    region = "us-east-1"
+    bucket         = "t2s-terraform-state"
+    key            = "express-t2s-app/<version>/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "t2s-terraform-lock"
+    encrypt        = true
   }
 }
 ```
-- This configuration sets up a remote backend so the Terraform state file is securely stored in an S3 bucket.
 
-#### Step 2. Initialize Terraform
+3. Initialize Terraform backend:
+
 ```bash
-cd terraform
+cd terraform/backend
 terraform init
 ```
-- Initializes the working directory and configures the remote backend.
 
-#### Step 3. Preview Infrastructure Plan
+---
+
+## Local App Test (v1)
+
 ```bash
-terraform plan
+cd express-t2s-app-v1
+npm install
+node index.js
 ```
-- Allows you to review changes before applying.
 
-#### Step 4. Apply the Changes
+Visit: `http://localhost:3000`
+
+---
+
+## Cloud Deployment (v4+)
+
+1. Ensure Docker image is built and pushed to ECR.
+
+2. Navigate to the Terraform directory of the version:
+
 ```bash
-terraform apply
+cd express-t2s-app-v4/terraform
 ```
-- Provisions the entire infrastructure (ECR repo, ECS cluster, task definitions, etc.)
 
----
+3. Apply the Terraform deployment:
 
-## Bash Script to Push Docker Image to ECR (scripts/push_ecr.sh)
 ```bash
-#!/bin/bash
-REPO_NAME=t2s-express-app                          # ECR repository name
-REGION=us-east-1                                   # AWS region
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text) # AWS account ID
-IMAGE_TAG=latest                                   # Docker image tag
-
-# Log in to ECR using AWS CLI
-aws ecr get-login-password --region $REGION | \
-docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
-
-# Create the repository if it doesn't exist
-aws ecr describe-repositories --repository-names $REPO_NAME --region $REGION > /dev/null 2>&1 || \
-aws ecr create-repository --repository-name $REPO_NAME --region $REGION
-
-# Build, tag, and push Docker image to ECR
-docker build -t $REPO_NAME ../app
-docker tag $REPO_NAME:$IMAGE_TAG $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
-docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
-```
-
----
-
-## Python Script to Push Docker Image to ECR (scripts/push_ecr.py)
-```python
-import boto3, subprocess
-
-repo_name = "t2s-express-app"   # ECR repo name
-region = "us-east-1"            # AWS region
-image_tag = "latest"            # Image tag
-
-ecr = boto3.client("ecr", region_name=region)
-sts = boto3.client("sts")
-account_id = sts.get_caller_identity()["Account"]
-repo_uri = f"{account_id}.dkr.ecr.{region}.amazonaws.com/{repo_name}"
-
-# Check or create ECR repo
-try:
-    ecr.describe_repositories(repositoryNames=[repo_name])
-except ecr.exceptions.RepositoryNotFoundException:
-    ecr.create_repository(repositoryName=repo_name)
-
-# Docker login, build, tag, and push
-subprocess.run(f"aws ecr get-login-password --region {region} | docker login --username AWS --password-stdin {repo_uri}", shell=True)
-subprocess.run(f"docker build -t {repo_name} ../app", shell=True)
-subprocess.run(f"docker tag {repo_name}:{image_tag} {repo_uri}:{image_tag}", shell=True)
-subprocess.run(f"docker push {repo_uri}:{image_tag}", shell=True)
-```
-
----
-
-## Bash Script to Deploy Image to ECS (scripts/deploy_ecs.sh)
-```bash
-#!/bin/bash
-CLUSTER_NAME=t2s-ecs-cluster       # ECS cluster name
-SERVICE_NAME=t2s-ecs-service       # ECS service name
-
-# Redeploy service with latest image
-aws ecs update-service \
-  --cluster $CLUSTER_NAME \
-  --service $SERVICE_NAME \
-  --force-new-deployment
-```
-
----
-
-## Python Script to Deploy Image to ECS (scripts/deploy_ecs.py)
-```python
-import boto3
-
-client = boto3.client('ecs')
-
-# Redeploy service with latest image
-client.update_service(
-    cluster='t2s-ecs-cluster',
-    service='t2s-ecs-service',
-    forceNewDeployment=True
-)
-```
-
----
-
-## Summary of Terraform Files
-- `main.tf`: Declares resources like ECS cluster, service, task definition, IAM roles, and ECR.
-- `variables.tf`: Defines reusable input variables.
-- `terraform.tfvars`: Actual values used in the variables.
-- `outputs.tf`: Displays useful output like ECR repo URI or ECS service name.
-- `backend.tf`: Defines remote S3 backend for storing Terraform state.
-
----
-
-## How to Run
-```bash
-# Terraform infra
-cd terraform
 terraform init
 terraform apply
-
-# Push Docker image (option 1)
-cd scripts
-bash push_ecr.sh
-
-# Push Docker image (option 2)
-python3 push_ecr.py
-
-# Deploy to ECS (option 1)
-bash deploy_ecs.sh
-
-# Deploy to ECS (option 2)
-python3 deploy_ecs.py
 ```
 
----
-## Author
+4. Access the application using the output `load_balancer_dns` or domain name.
 
-**Dr. Emmanuel Naweji (2025)**  
-Cloud | DevOps | SRE | FinOps | AI Mentor  
-GitHub: [Here2ServeU](https://github.com/Here2ServeU)
-LinkedIn: [emmanuelnaweji](https://www.linkedin.com/in/ready2assist/) 
-Medium: [@here2serveyou](https://medium.com/@here2serveyou)  
-Book a Free 30-Minute Consultation: [naweji.setmore.com](https://here4you.setmore.com/emmanuel)
+---
+
+## Final Outcome
+
+By completing this monorepo series, we will achieve:
+- Production-grade cloud infrastructure
+- CI/CD & GitOps workflows
+- Secure, observable applications
+- Real-world DevOps portfolio experience
+
+---
+
+© 2025 Emmanuel Naweji. All rights reserved.
