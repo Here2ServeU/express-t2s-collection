@@ -159,6 +159,22 @@ terraform apply
 cd ..                                        #To move up to express-t2s-app-v4/terraform
 aws s3 rm s3://emmanuel-tf-state --recursive #To clean bucket via script (non-versioned only)
 terraform destroy --auto-approve
+```
+
+- When using versioning, create a file and name it, delete_all_versions.py
+- Add the following content ensuring you use your Bucket name:
+```py
+import boto3
+
+bucket_name = "emmanuel-tf-state"
+s3 = boto3.client("s3")
+
+versions = s3.list_object_versions(Bucket=bucket_name)
+
+for item in versions.get('Versions', []) + versions.get('DeleteMarkers', []):
+    print(f"Deleting {item['Key']} (version: {item['VersionId']})")
+    s3.delete_object(Bucket=bucket_name, Key=item['Key'], VersionId=item['VersionId'])
+```
 
 # Deleting the other Resources
 cd ecr (or ecs/eks)
