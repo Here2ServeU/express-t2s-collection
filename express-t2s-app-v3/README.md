@@ -155,7 +155,12 @@ terraform apply
 ---
 ## Clean Up
 ```bash
+# Deleting the Backend
 cd .. #To move up to express-t2s-app-v4/terraform
+terraform destroy --auto-approve
+
+# Deleting the other Resources
+cd ecr (or ecs/eks)
 terraform destroy --auto-approve
 ```
 
