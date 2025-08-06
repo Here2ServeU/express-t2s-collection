@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository is the monorepo for the evolving Express-based web applications that support the mission of **Transformed 2 Succeed (T2S)**. Each version (`v1`, `v2`, etc.) represents a progressive stage of the Node.js + Express app — from MVP to a production-ready, cloud-native, DevOps-enabled platform.
+This repository is the monorepo for the evolving Express-based web applications that support the mission of **Transformed 2 Succeed (T2S)**. Each version (`v1`, `v2`, etc.) represents a progressive stage of the Node.js + Express app from MVP to a production-ready, cloud-native, DevOps-enabled platform.
 
 Our long-term vision is to build a mentorship system that is:
 - Containerized using Docker
