@@ -175,6 +175,13 @@ for item in versions.get('Versions', []) + versions.get('DeleteMarkers', []):
     print(f"Deleting {item['Key']} (version: {item['VersionId']})")
     s3.delete_object(Bucket=bucket_name, Key=item['Key'], VersionId=item['VersionId'])
 ```
+-Run the following commands: 
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install boto3
+python delete_all_versions.py
+```
 
 # Deleting the other Resources
 cd ecr (or ecs/eks)
