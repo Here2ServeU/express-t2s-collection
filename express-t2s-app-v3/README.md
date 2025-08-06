@@ -131,11 +131,16 @@ Visit: `http://localhost:3000`
 ## Cloud Deployment (v4+)
 
 1. Ensure Docker image is built and pushed to ECR.
+```bash
+chmod +x build_and_push.sh
+./build_and_push.sh
+```
 
-2. Navigate to the Terraform directory of the version:
+3. Navigate to the Terraform directory of the version:
 
 ```bash
 cd express-t2s-app-v4/terraform
+cd /ecr (or /ecs or eks)
 ```
 
 3. Apply the Terraform deployment:
@@ -145,7 +150,14 @@ terraform init
 terraform apply
 ```
 
-4. Access the application using the output `load_balancer_dns` or domain name.
+4. Access the application using the output `load_balancer_dns` or domain name (ecs/eks).
+
+---
+## Clean Up
+```bash
+cd .. #To move up to express-t2s-app-v4/terraform
+terraform destroy --auto-approve
+```
 
 ---
 
