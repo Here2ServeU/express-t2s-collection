@@ -1,2 +1,15 @@
-region       = "us-east-1"
-cluster_name = "express-cluster"
+region                  = "us-east-1"
+cluster_name            = "express-cluster"
+task_execution_role_name = "ecsTaskExecutionRole"
+task_execution_policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+sg_name                 = "t2s-ecs-sg"
+sg_description          = "Allow HTTP and SSH"
+vpc_id                  = "vpc-xxxxxxxx"
+image_url               = "your_account_id.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app:v1"
+task_family             = "t2s-express-app-task"
+task_cpu                = "256"
+task_memory             = "512"
+container_name          = "express-container"
+service_name            = "express-service"
+desired_count           = 1
+subnet_ids              = ["subnet-xxxxxxxx", "subnet-yyyyyyyy"]
