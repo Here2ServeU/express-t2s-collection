@@ -2,9 +2,15 @@ provider "aws" {
   region = var.region
 }
 
-resource "aws_ecr_repository" "app_repo" {
-  name         = var.repo_name
-  force_delete = true
+data "aws_caller_identity" "current" {}
+
+data "aws_ecr_repository" "existing_repo" {
+  name = var.repo_name
+}
+
+data "aws_security_group" "existing_sg" {
+  name   = var.sg_name
+  vpc_id = var.vpc_id
 }
 
 resource "aws_ecs_cluster" "main" {
@@ -32,37 +38,6 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = var.task_execution_policy_arn
 }
 
-resource "aws_security_group" "ecs_sg" {
-  name        = var.sg_name
-  description = var.sg_description
-  vpc_id      = var.vpc_id
-
-  ingress {
-    description = "Allow HTTP"
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "Allow SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-data "aws_caller_identity" "current" {}
-
 resource "aws_ecs_task_definition" "app" {
   family                   = var.task_family
   network_mode             = "awsvpc"
@@ -73,7 +48,7 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([{
     name      = var.container_name
-    image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${aws_ecr_repository.app_repo.name}:latest"
+    image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${data.aws_ecr_repository.existing_repo.name}:latest"
     essential = true
     portMappings = [{
       containerPort = 3000
@@ -91,7 +66,7 @@ resource "aws_ecs_service" "app" {
 
   network_configuration {
     subnets         = var.subnet_ids
-    security_groups = [aws_security_group.ecs_sg.id]
+    security_groups = [data.aws_security_group.existing_sg.id]
     assign_public_ip = true
   }
 
