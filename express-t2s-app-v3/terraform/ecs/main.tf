@@ -82,6 +82,11 @@ resource "aws_ecs_task_definition" "app" {
   memory                   = var.task_memory
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
+  runtime_platform {
+     cpu_architecture        = "ARM64"   # Change to ARM64 or x86_64 depending on your image
+     operating_system_family = "LINUX"
+  }
+
   container_definitions = jsonencode([
     {
       name      = var.container_name
