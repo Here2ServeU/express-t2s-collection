@@ -1,37 +1,40 @@
-
 # Express T2S App Monorepo
 
 ## Overview
 
-This monorepo supports the iterative development of Express-based applications for **Transformed 2 Succeed (T2S)**. Each version (`v1`, `v2`, etc.) reflects a progressive enhancement toward a secure, observable, production-ready platform on AWS using Terraform.
+This repository is the monorepo for the evolving Express-based web applications that support the mission of **Transformed 2 Succeed (T2S)**. Each version (`v1`, `v2`, etc.) represents a progressive stage of the Node.js + Express app from MVP to a production-ready, cloud-native, DevOps-enabled platform.
 
-The platform is designed to be:
+Our long-term vision is to build a mentorship system that is:
 - Containerized using Docker
-- Provisioned entirely with Terraform (ECR, ECS, EKS, IAM)
-- Monitored using Prometheus, Grafana, CloudWatch
-- Secured with IAM, Secrets Manager, and DevSecOps tools
-- Cost-efficient, scalable, and AI-enabled (in v6)
+- Deployed via Terraform on AWS (ECR, ECS, EKS)
+- Monitored and observable
+- Secured with IAM, WAF, and DevSecOps scanning
+- Scalable, cost-efficient, and highly available
 
 ---
 
 ## Goals
 
-- Push Dockerized apps to AWS ECR
-- Deploy services on ECS (Fargate) and EKS using Terraform
-- Use GitHub Actions for CI/CD
+- Containerize each app version using Docker
+- Push container images to AWS ECR
+- Deploy using Terraform with ECS and EKS
+- Implement GitHub Actions for CI/CD
+- Add observability and monitoring (Grafana, Prometheus, CloudWatch)
 - Integrate DevSecOps (Trivy, Checkov)
-- Add observability and logging with Prometheus, Grafana, CloudWatch
-- Support secure mentorship features (signup, automation)
+- Enable secure, automated mentorship workflows
 
 ---
 
-## Features Implemented
+## Versions and Status
 
-Each version (e.g., `express-t2s-app-v1`) includes:
-- Node.js + Express backend
-- Static frontend with HTML form
-- Dockerfile and CI/CD support
-- Terraform modules for infrastructure provisioning
+Each app version is built on DevOps principles and infrastructure-as-code:
+
+- `express-t2s-app-v1`: Basic Node.js + Express app
+- `express-t2s-app-v2`: Adds Docker support and CI pipeline structure
+- `express-t2s-app-v3`: Includes GitHub Actions and AWS ECR deployment
+- `express-t2s-app-v4`: Adds ECS Fargate and Terraform infrastructure (Coming Out Soon)
+- `express-t2s-app-v5`: Adds EKS with ArgoCD, observability stack (Coming Out Soon)
+- `express-t2s-app-v6`: Adds AI-based automation and intelligent monitoring (Coming Out Soon)
 
 ---
 
@@ -39,63 +42,44 @@ Each version (e.g., `express-t2s-app-v1`) includes:
 
 ```
 express-t2s-app/
-├── express-t2s-app-v1/      
+├── express-t2s-app-v1/
 │   ├── public/
-│   ├── index.js
-│   └── terraform/
-│       └── backend/        # Remote state S3 + DynamoDB setup
-│       ├── main.tf
-│       ├── variables.tf
-│       ├── terraform.tfvars
-│       ├── outputs.tf
+│   └── index.js
 │
-├── express-t2s-app-v2/      
+├── express-t2s-app-v2/
 │   ├── Dockerfile
-│   ├── .dockerignore
-│   └── terraform/
-│       └── backend/
-│       ├── main.tf
-│       ├── variables.tf
-│       ├── terraform.tfvars
-│       ├── outputs.tf
+│   └── .dockerignore
 │
-├── express-t2s-app-v3/      
-│   ├── .github/workflows/ci.yml
-│   └── terraform/
-│       └── backend/
-│       ├── main.tf
-│       ├── variables.tf
-│       ├── terraform.tfvars
-│       ├── outputs.tf
+├── express-t2s-app-v3/
+│   └── .github/workflows/ci.yml
 │
-├── express-t2s-app-v4/      # Coming Out Soon
-│   └── terraform/
-│       └── backend/
-│       ├── main.tf
-│       ├── variables.tf
-│       ├── terraform.tfvars
-│       ├── outputs.tf
-│       ├── backend.tf
+├── express-t2s-app-v4/
+│   ├── terraform/
+│   │   ├── backend/
+│   │   │   └── backend.tf
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── ...
 │
-├── express-t2s-app-v5/      # Coming Out Soon
-│   └── terraform/
-│       └── backend/
-│       ├── main.tf
-│       ├── variables.tf
-│       ├── terraform.tfvars
-│       ├── outputs.tf
-│       ├── backend.tf
+├── express-t2s-app-v5/
+│   ├── terraform/
+│   │   ├── backend/
+│   │   │   └── backend.tf
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── ...
 │
-├── express-t2s-app-v6/      # Coming Out Soon - AI Enhanced
-│   └── terraform/
-│       └── backend/
-│       ├── main.tf
-│       ├── variables.tf
-│       ├── terraform.tfvars
-│       ├── outputs.tf
-│       ├── backend.tf
+├── express-t2s-app-v6/
+│   ├── terraform/
+│   │   ├── backend/
+│   │   │   └── backend.tf
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── ...
 │
-├── .gitignore
 └── README.md
 ```
 
@@ -103,16 +87,13 @@ express-t2s-app/
 
 ## Remote Backend Setup
 
-To securely manage state files per version, we use **Terraform remote backends (S3 + DynamoDB)**. Each version has its own isolated backend for collaborative provisioning.
+To enable collaborative and secure Terraform state management, each version uses an **S3 backend with DynamoDB locking**:
 
-### Steps:
-
-1. Manually create:
+1. Manually create or bootstrap:
    - S3 bucket: `t2s-terraform-state`
    - DynamoDB table: `t2s-terraform-lock`
-   - You define your variables on the terraform.tfvars file
 
-2. Add the following to `terraform/backend/backend.tf` for each version:
+2. Add this to `terraform/backend/backend.tf` for the version:
 
 ```hcl
 terraform {
@@ -126,36 +107,98 @@ terraform {
 }
 ```
 
-3. Initialize and Deploy backend:
+3. Initialize Terraform backend:
 
 ```bash
-cd express-t2s-app-v<version>/terraform/backend
+cd terraform/backend
 terraform init
-terraform plan
-terraform apply
-```
-
-4. Initialize and Deploy the Infrastructure:
-- Configure the terraform.tfvars file
-- Initialize and deploy the Infra using the following commands
-
-```bash
-cd ..         # To move up (one level) to this location, express-t2s-app-v<version>/terraform
-terraform init
-terraform plan
-terraform apply
 ```
 
 ---
 
-## Outcome
+## Local App Test (v1)
 
-By the end of this entire project (versions 1 through 6), you will have:
-- Fully provisioned infrastructure via Terraform
-- Modular stateful deployments
-- GitHub Actions CI/CD
-- Secure, observable, AI-enabled environments
-- Scalable mentorship onboarding platform
+```bash
+cd express-t2s-app-v1
+npm install
+node index.js
+```
+
+Visit: `http://localhost:3000`
+
+---
+
+## Cloud Deployment (v4+)
+
+1. Ensure Docker image is built and pushed to ECR.
+```bash
+chmod +x build_and_push.sh
+./build_and_push.sh
+```
+
+3. Navigate to the Terraform directory of the version:
+
+```bash
+cd express-t2s-app-v4/terraform
+cd /ecr (or /ecs or eks)
+```
+
+3. Apply the Terraform deployment:
+
+```bash
+terraform init
+terraform apply
+```
+
+4. Access the application using the output `load_balancer_dns` or domain name (ecs/eks).
+
+---
+## Clean Up
+```bash
+# Deleting the Backend
+cd ..                                        #To move up to express-t2s-app-v4/terraform
+aws s3 rm s3://emmanuel-tf-state --recursive #To clean bucket via script (non-versioned only)
+terraform destroy --auto-approve
+```
+
+- When using versioning, create a file and name it, delete_all_versions.py
+- Add the following content ensuring you use your Bucket name:
+```py
+import boto3
+
+bucket_name = "emmanuel-tf-state"
+s3 = boto3.client("s3")
+
+versions = s3.list_object_versions(Bucket=bucket_name)
+
+for item in versions.get('Versions', []) + versions.get('DeleteMarkers', []):
+    print(f"Deleting {item['Key']} (version: {item['VersionId']})")
+    s3.delete_object(Bucket=bucket_name, Key=item['Key'], VersionId=item['VersionId'])
+```
+-Run the following commands: 
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install boto3
+python delete_all_versions.py
+deactivate
+```
+
+# Deleting the other Resources
+```
+cd ecr (or ecs/eks)
+terraform destroy --auto-approve
+```
+
+---
+
+## Final Outcome
+
+By completing this monorepo series, we will achieve:
+- Production-grade cloud infrastructure
+- CI/CD & GitOps workflows
+- Secure, observable applications
+- Real-world DevOps portfolio experience
 
 ---
 
