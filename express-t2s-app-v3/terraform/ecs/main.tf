@@ -1,6 +1,10 @@
-
 provider "aws" {
   region = var.region
+}
+
+resource "aws_ecr_repository" "app_repo" {
+  name         = var.repo_name
+  force_delete = true
 }
 
 resource "aws_ecs_cluster" "main" {
@@ -57,6 +61,8 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 resource "aws_ecs_task_definition" "app" {
   family                   = var.task_family
   network_mode             = "awsvpc"
@@ -67,7 +73,7 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([{
     name      = var.container_name
-    image     = var.image_url
+    image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${aws_ecr_repository.app_repo.name}:latest"
     essential = true
     portMappings = [{
       containerPort = 3000
