@@ -2,24 +2,38 @@
 
 set -e
 
-APP_DIR="./app"
-PUBLIC_DIR="./app/public"
+# Set app directory relative to this script's location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="${SCRIPT_DIR}/../app"
 AWS_REGION="us-east-1"
 REPO_NAME="t2s-express-app"
-ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
-ECR_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}"
 IMAGE_TAG="latest"
 
-# Authenticate Docker with AWS ECR
-aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URI
+# Verify APP_DIR exists
+if [ ! -d "$APP_DIR" ]; then
+  echo "Error: Application directory not found at: $APP_DIR"
+  exit 1
+fi
 
-# Copy index.html to app/public if needed (optional, depending on static hosting config)
+# Get AWS account ID
+ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+
+# Construct ECR URI
+ECR_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}"
+
+# Authenticate Docker with AWS ECR
+echo "Logging into AWS ECR..."
+aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_URI"
 
 # Build Docker image
-docker build -t ${REPO_NAME}:${IMAGE_TAG} ${APP_DIR}
+echo "Building Docker image from $APP_DIR..."
+docker build -t "${REPO_NAME}:${IMAGE_TAG}" "$APP_DIR"
 
 # Tag image
-docker tag ${REPO_NAME}:${IMAGE_TAG} ${ECR_URI}:${IMAGE_TAG}
+docker tag "${REPO_NAME}:${IMAGE_TAG}" "${ECR_URI}:${IMAGE_TAG}"
 
 # Push image to ECR
-docker push ${ECR_URI}:${IMAGE_TAG}
+echo "Pushing image to ECR: ${ECR_URI}:${IMAGE_TAG}"
+docker push "${ECR_URI}:${IMAGE_TAG}"
+
+echo "✅ Docker image pushed successfully!"
