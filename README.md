@@ -183,6 +183,8 @@ curl http://<public-ip>:3000
 	•	Attach the ECS service to the target group.
 	•	Point a domain or use the ALB DNS name to access your app.
 
+- A section on the Terraform scripts to deploy the Application behind an ALB, which gives you a single stable URL instead of chasing changing IPs. 
+
 ---
 ## Clean Up
 ```bash
