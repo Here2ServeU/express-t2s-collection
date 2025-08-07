@@ -128,7 +128,7 @@ Visit: `http://localhost:3000`
 
 ---
 
-## Cloud Deployment (v4+)
+## Cloud Deployment (v3+)
 
 1. Ensure Docker image is built and pushed to ECR.
 ```bash
@@ -139,7 +139,7 @@ chmod +x build_and_push.sh
 3. Navigate to the Terraform directory of the version:
 
 ```bash
-cd express-t2s-app-v4/terraform
+cd express-t2s-app-v3/terraform
 cd /ecr (or /ecs or eks)
 ```
 
@@ -151,6 +151,37 @@ terraform apply
 ```
 
 4. Access the application using the output `load_balancer_dns` or domain name (ecs/eks).
+- Accessing the App through ECS
+```bash
+# Find the Public IP of your ECS Task by running this command first:
+aws ecs list-tasks \
+  --cluster <your-cluster-name> \
+  --service-name <your-service-name> \
+  --query "taskArns[]" --output text
+
+# Copy the Task ARN, then run the following command:
+aws ecs describe-tasks \
+  --cluster <your-cluster-name> \
+  --tasks <your-task-arn> \
+  --query "tasks[].attachments[].details[?name=='publicIPv4Address'].value" \
+  --output text
+```
+- The above will output the Public IP.
+- Test Access:
+```bash
+# On your browser or use the 'curl' command:
+curl http://<public-ip>:3000
+```
+- If you cannot reach your Application over the browser. (1) Make sure your Security Group allows inbound TCP traffic on port 3000 from 0.0.0.0/0. (2) Make sure your app listens on 0.0.0.0, not localhost.
+
+### Recommended (Use an Application Load Balancer)
+- Using task public IPs directly is fragile (IP changes if the task restarts).
+
+- Instead:
+	•	Create an ALB in your VPC.
+	•	Add a Target Group for port 3000.
+	•	Attach the ECS service to the target group.
+	•	Point a domain or use the ALB DNS name to access your app.
 
 ---
 ## Clean Up
