@@ -182,6 +182,7 @@ source venv/bin/activate
 pip install boto3
 python delete_all_versions.py
 deactivate
+rm -rf venv/
 ```
 
 # Deleting the other Resources
