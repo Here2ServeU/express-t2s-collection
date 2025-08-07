@@ -11,13 +11,17 @@ provider "aws" {
   region = var.region
 }
 
+# -----------------------------
 # CloudWatch Logs for container output (helps debug crashes)
+# -----------------------------
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.service_name}"
   retention_in_days = 7
 }
 
+# -----------------------------
 # IAM role for ECS tasks to pull from ECR and write logs
+# -----------------------------
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = var.task_execution_role_name
 
@@ -36,7 +40,9 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = var.task_execution_policy_arn
 }
 
+# -----------------------------
 # Security group for the service (opens port to the world by default)
+# -----------------------------
 resource "aws_security_group" "ecs_sg" {
   name        = var.sg_name
   description = var.sg_description
@@ -68,7 +74,9 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
+# -----------------------------
 # ECS Cluster
+# -----------------------------
 resource "aws_ecs_cluster" "main" {
   name = var.cluster_name
 }
@@ -109,7 +117,9 @@ resource "aws_ecs_task_definition" "app" {
   ])
 }
 
+# -----------------------------
 # ECS Service (public IP for quick testing)
+# -----------------------------
 resource "aws_ecs_service" "app" {
   name            = var.service_name
   cluster         = aws_ecs_cluster.main.id
@@ -124,6 +134,72 @@ resource "aws_ecs_service" "app" {
   }
 
   depends_on = [
+    aws_iam_role_policy_attachment.ecs_task_execution_role_policy,
+    aws_cloudwatch_log_group.ecs
+  ]
+}
+
+# -----------------------------
+# ECS + ALB Integration Scripts
+# -----------------------------
+# This adds an ALB, target group, listener, and connects it to the ECS service
+
+resource "aws_lb" "ecs_alb" {
+  name               = "${var.service_name}-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.ecs_sg.id]
+  subnets            = var.subnet_ids
+}
+
+resource "aws_lb_target_group" "ecs_tg" {
+  name        = "${var.service_name}-tg"
+  port        = var.container_port
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
+  health_check {
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200-399"
+  }
+}
+
+resource "aws_lb_listener" "ecs_http_listener" {
+  load_balancer_arn = aws_lb.ecs_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.ecs_tg.arn
+  }
+}
+
+resource "aws_ecs_service" "app" {
+  name            = var.service_name
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.app.arn
+  launch_type     = "FARGATE"
+  desired_count   = var.desired_count
+
+  network_configuration {
+    subnets         = var.subnet_ids
+    security_groups = [aws_security_group.ecs_sg.id]
+    assign_public_ip = true
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.ecs_tg.arn
+    container_name   = var.container_name
+    container_port   = var.container_port
+  }
+
+  depends_on = [
+    aws_lb_listener.ecs_http_listener,
     aws_iam_role_policy_attachment.ecs_task_execution_role_policy,
     aws_cloudwatch_log_group.ecs
   ]
