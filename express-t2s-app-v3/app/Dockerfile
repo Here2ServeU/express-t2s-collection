@@ -4,17 +4,15 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json first for caching
+# Copy package files and install dependencies
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy all files to container
+# Copy ALL files, including public folder
 COPY . .
 
-# Expose the app port
+# Expose app port
 EXPOSE 3000
 
-# Start the Node.js server
+# Start app
 CMD ["node", "index.js"]

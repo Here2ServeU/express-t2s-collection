@@ -22,3 +22,13 @@ output "log_group" {
   description = "CloudWatch Logs group for the container"
   value       = aws_cloudwatch_log_group.ecs.name
 }
+
+output "alb_dns_name" {
+  description = "Public ALB DNS"
+  value       = aws_lb.ecs_alb.dns_name
+}
+
+output "target_group_arn" {
+  description = "Target group ARN"
+  value       = aws_lb_target_group.ecs_tg.arn
+}

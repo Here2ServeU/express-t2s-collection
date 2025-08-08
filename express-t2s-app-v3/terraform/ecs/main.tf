@@ -12,7 +12,7 @@ provider "aws" {
 }
 
 # -----------------------------
-# CloudWatch Logs for container output (helps debug crashes)
+# CloudWatch Logs
 # -----------------------------
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.service_name}"
@@ -20,7 +20,7 @@ resource "aws_cloudwatch_log_group" "ecs" {
 }
 
 # -----------------------------
-# IAM role for ECS tasks to pull from ECR and write logs
+# IAM Role for ECS Task Execution
 # -----------------------------
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = var.task_execution_role_name
@@ -41,7 +41,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
 }
 
 # -----------------------------
-# Security group for the service (opens port to the world by default)
+# Security Group for ECS Tasks
 # -----------------------------
 resource "aws_security_group" "ecs_sg" {
   name        = var.sg_name
@@ -55,16 +55,6 @@ resource "aws_security_group" "ecs_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  # Optional: SSH ingress (usually not needed for Fargate)
-  # Remove this block if not required.
-  # ingress {
-  #   description = "SSH"
-  #   from_port   = 22
-  #   to_port     = 22
-  #   protocol    = "tcp"
-  #   cidr_blocks = ["0.0.0.0/0"]
-  # }
 
   egress {
     from_port   = 0
@@ -81,7 +71,9 @@ resource "aws_ecs_cluster" "main" {
   name = var.cluster_name
 }
 
-# Task Definition pulling image from your ECR URI
+# -----------------------------
+# Task Definition
+# -----------------------------
 resource "aws_ecs_task_definition" "app" {
   family                   = var.task_family
   network_mode             = "awsvpc"
@@ -91,8 +83,8 @@ resource "aws_ecs_task_definition" "app" {
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
   runtime_platform {
-     cpu_architecture        = "ARM64"   # Change to ARM64 or x86_64 depending on your image
-     operating_system_family = "LINUX"
+    cpu_architecture        = "ARM64"
+    operating_system_family = "LINUX"
   }
 
   container_definitions = jsonencode([
@@ -115,49 +107,61 @@ resource "aws_ecs_task_definition" "app" {
       }
     }
   ])
-}
-
-# -----------------------------
-# ECS Service (public IP for quick testing)
-# -----------------------------
-resource "aws_ecs_service" "app" {
-  name            = var.service_name
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.app.arn
-  launch_type     = "FARGATE"
-  desired_count   = var.desired_count
-
-  network_configuration {
-    subnets          = var.subnet_ids
-    security_groups  = [aws_security_group.ecs_sg.id]
-    assign_public_ip = true
-  }
 
   depends_on = [
-    aws_iam_role_policy_attachment.ecs_task_execution_role_policy,
-    aws_cloudwatch_log_group.ecs
+    aws_cloudwatch_log_group.ecs,
+    aws_iam_role_policy_attachment.ecs_task_execution_role_policy
   ]
 }
 
 # -----------------------------
-# ECS + ALB Integration Scripts
+# ALB Security Group
 # -----------------------------
-# This adds an ALB, target group, listener, and connects it to the ECS service
+resource "aws_security_group" "load_balancer_sg" {
+  name        = "${var.service_name}-alb-sg"
+  description = "Security group for the Application Load Balancer"
+  vpc_id      = var.vpc_id
 
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# -----------------------------
+# Load Balancer
+# -----------------------------
 resource "aws_lb" "ecs_alb" {
   name               = "${var.service_name}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.load_balancer_sg.id]
   subnets            = var.subnet_ids
+
+  depends_on = [
+    aws_security_group.load_balancer_sg
+  ]
 }
 
+# -----------------------------
+# Target Group
+# -----------------------------
 resource "aws_lb_target_group" "ecs_tg" {
   name        = "${var.service_name}-tg"
   port        = var.container_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip"
+
   health_check {
     path                = "/"
     interval            = 30
@@ -166,28 +170,15 @@ resource "aws_lb_target_group" "ecs_tg" {
     unhealthy_threshold = 2
     matcher             = "200-399"
   }
+
+  depends_on = [
+    aws_lb.ecs_alb
+  ]
 }
 
-resource "aws_security_group" "load_balancer_sg" {
-  name        = "load-balancer-security-group"
-  description = "Security group for the Application Load Balancer"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    from_port   = 80  # Replace with your listener port
-    to_port     = 80  # Replace with your listener port
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Allow traffic from anywhere (adjust as needed for security)
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1" # Allow all outbound traffic
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
+# -----------------------------
+# Listener
+# -----------------------------
 resource "aws_lb_listener" "ecs_http_listener" {
   load_balancer_arn = aws_lb.ecs_alb.arn
   port              = 80
@@ -197,4 +188,36 @@ resource "aws_lb_listener" "ecs_http_listener" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ecs_tg.arn
   }
+
+  depends_on = [
+    aws_lb_target_group.ecs_tg
+  ]
+}
+
+# -----------------------------
+# ECS Service
+# -----------------------------
+resource "aws_ecs_service" "app" {
+  name            = var.service_name
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.app.arn
+  launch_type     = "FARGATE"
+  desired_count   = var.desired_count
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.ecs_tg.arn
+    container_name   = var.container_name
+    container_port   = var.container_port
+  }
+
+  network_configuration {
+    subnets          = var.subnet_ids
+    security_groups  = [aws_security_group.ecs_sg.id]
+    assign_public_ip = true
+  }
+
+  depends_on = [
+    aws_lb_listener.ecs_http_listener,
+    aws_ecs_task_definition.app
+  ]
 }

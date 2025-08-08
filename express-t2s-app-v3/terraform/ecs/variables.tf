@@ -1,6 +1,5 @@
-# ===== Core =====
 variable "region" {
-  description = "AWS region to deploy to"
+  description = "AWS region"
   type        = string
 }
 
@@ -15,118 +14,96 @@ variable "service_name" {
 }
 
 variable "task_family" {
-  description = "ECS Task family name"
+  description = "ECS Task family"
   type        = string
 }
 
 variable "task_cpu" {
-  description = "Fargate CPU units (e.g., 256, 512, 1024)"
+  description = "Fargate CPU units"
   type        = string
 }
 
 variable "task_memory" {
-  description = "Fargate memory in MiB (e.g., 512, 1024, 2048)"
+  description = "Fargate memory MiB"
   type        = string
 }
 
 variable "container_name" {
-  description = "Container name inside the task"
+  description = "Container name in task"
   type        = string
 }
 
 variable "container_port" {
-  description = "Application port exposed by the container"
+  description = "App port exposed by container"
   type        = number
 }
 
 variable "desired_count" {
-  description = "Number of tasks to run"
+  description = "Number of tasks"
   type        = number
 }
 
-# ===== Image (ECR) =====
 variable "image_url" {
-  description = "ECR repository URI without tag (e.g., 123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo)"
+  description = "ECR repo URI without tag"
   type        = string
 }
 
 variable "image_tag" {
-  description = "Image tag (e.g., latest)"
+  description = "Image tag"
   type        = string
 }
 
-# ===== Networking =====
 variable "vpc_id" {
-  description = "VPC ID where the service runs"
+  description = "VPC ID"
   type        = string
 }
 
 variable "subnet_ids" {
-  description = "List of subnet IDs for the service (prefer two in different AZs)"
+  description = "Subnets for ALB/ECS"
   type        = list(string)
 }
 
-# ===== Security Group =====
 variable "sg_name" {
-  description = "Security group name"
+  description = "ECS SG name"
   type        = string
 }
 
 variable "sg_description" {
-  description = "Security group description"
+  description = "ECS SG description"
   type        = string
 }
 
-# ===== IAM =====
 variable "task_execution_role_name" {
-  description = "Name for the ECS task execution role"
+  description = "Execution role name"
   type        = string
 }
 
 variable "task_execution_policy_arn" {
-  description = "Managed policy for ECS task execution role"
+  description = "Execution role policy ARN"
   type        = string
   default     = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# ===== ALB =====
-variable "alb_name" {
-  description = "Name of the Application Load Balancer"
-  type        = string
-}
-
-variable "alb_internal" {
-  description = "Whether the ALB is internal (true) or internet-facing (false)"
-  type        = bool
-  default     = false
-}
-
-variable "alb_listener_port" {
-  description = "ALB listener port (80 for HTTP)"
-  type        = number
-  default     = 80
-}
-
 variable "health_check_path" {
-  description = "Health check path for the target group"
+  description = "ALB target group health check path"
   type        = string
   default     = "/"
 }
 
+variable "cpu_arch" {
+  description = "CPU architecture for task: ARM64 or X86_64"
+  type        = string
+  default     = "X86_64"
+}
+
+variable "alb_name" {
+  description = "Name for the Application Load Balancer"
+  type        = string
+  default     = null
+}
+
 variable "target_group_name" {
-  description = "Name of the target group used by the ALB"
+  description = "Name for the target group"
   type        = string
-}
-
-# Optional TLS (set both to enable HTTPS listener)
-variable "enable_https" {
-  description = "Enable HTTPS (443) listener if true"
-  type        = bool
-  default     = false
-}
-
-variable "certificate_arn" {
-  description = "ACM certificate ARN for HTTPS listener (required if enable_https = true)"
-  type        = string
-  default     = ""
+  default     = null
 }

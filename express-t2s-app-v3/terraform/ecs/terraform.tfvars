@@ -16,8 +16,8 @@ image_url = "780593603882.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app"
 image_tag = "latest"
 
 # Networking (replace with your real IDs)
-vpc_id     = "vpc-0abc123456789def0"
-subnet_ids = ["subnet-0123abcd4567efgh1", "subnet-0897abcd6543efgh2"]
+vpc_id     = "vpc-004194e2184e0d40d"
+subnet_ids = ["subnet-0acca018b1cc5f306", "subnet-0dcc65506b8690621"]
 
 # Security Group
 sg_name        = "t2s-ecs-sg"
@@ -29,8 +29,6 @@ task_execution_role_name = "t2s-ecs-task-execution-role"
 
 # ALB
 alb_name          = "t2s-express-alb"
-alb_internal      = false
-alb_listener_port = 80
 health_check_path = "/"
 target_group_name = "t2s-express-tg"
 
