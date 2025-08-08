@@ -1,5 +1,5 @@
 {
-  "name": "express-app",
+  "name": "t2s-express-app",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
