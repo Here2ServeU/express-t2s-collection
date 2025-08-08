@@ -148,7 +148,7 @@ resource "aws_lb" "ecs_alb" {
   name               = "${var.service_name}-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.ecs_sg.id]
+  security_groups    = [aws_security_group.load_balancer_sg.id]
   subnets            = var.subnet_ids
 }
 
@@ -168,6 +168,26 @@ resource "aws_lb_target_group" "ecs_tg" {
   }
 }
 
+resource "aws_security_group" "load_balancer_sg" {
+  name        = "load-balancer-security-group"
+  description = "Security group for the Application Load Balancer"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port   = 80  # Replace with your listener port
+    to_port     = 80  # Replace with your listener port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Allow traffic from anywhere (adjust as needed for security)
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1" # Allow all outbound traffic
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 resource "aws_lb_listener" "ecs_http_listener" {
   load_balancer_arn = aws_lb.ecs_alb.arn
   port              = 80
@@ -177,30 +197,4 @@ resource "aws_lb_listener" "ecs_http_listener" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ecs_tg.arn
   }
-}
-
-resource "aws_ecs_service" "app" {
-  name            = var.service_name
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.app.arn
-  launch_type     = "FARGATE"
-  desired_count   = var.desired_count
-
-  network_configuration {
-    subnets         = var.subnet_ids
-    security_groups = [aws_security_group.ecs_sg.id]
-    assign_public_ip = true
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.ecs_tg.arn
-    container_name   = var.container_name
-    container_port   = var.container_port
-  }
-
-  depends_on = [
-    aws_lb_listener.ecs_http_listener,
-    aws_iam_role_policy_attachment.ecs_task_execution_role_policy,
-    aws_cloudwatch_log_group.ecs
-  ]
 }
