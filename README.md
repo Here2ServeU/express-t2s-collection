@@ -78,7 +78,9 @@ express-t2s-app/
 │   │   ├── main.tf
 │   │   ├── variables.tf
 │   │   └── outputs.tf
-│   └── ...
+│   └──  k8s/
+│   │   ├── deployment.yaml
+│   │   ├── deployment.yaml
 │
 └── README.md
 ```
@@ -128,7 +130,7 @@ Visit: `http://localhost:3000`
 
 ---
 
-## Cloud Deployment (v3+)
+## Cloud Deployment (v3+) - ECS Deployment
 
 1. Ensure Docker image is built and pushed to ECR.
 ```bash
@@ -140,7 +142,7 @@ chmod +x build_and_push.sh
 
 ```bash
 cd express-t2s-app-v3/terraform
-cd /ecr (or /ecs or eks)
+cd /ecr
 ```
 
 3. Apply the Terraform deployment:
@@ -220,8 +222,125 @@ rm -rf venv/
 
 # Deleting the other Resources
 ```
-cd ecr (or ecs/eks)
+cd ecr (or ecs)
 terraform destroy --auto-approve
+```
+
+---
+
+## Cloud Deployment (v3+) - Step-by-Step Deploying Express App on EKS
+
+### 1. Clone and navigate to the Terraform folder
+```bash
+cd express-t2s-app/express-t2s-app-v6/terraform
+```
+
+### 2. Initialize and apply the Terraform configuration
+```bash
+terraform init
+terraform apply -auto-approve
+```
+
+### 3. Configure kubectl to connect to your EKS cluster
+```bash
+aws eks --region <region> update-kubeconfig --name express-t2s-cluster
+```
+
+### 4. Build and Push Docker Image to ECR
+```bash
+cd ../../express-t2s-app-v2
+docker build -t <aws_account_id>.dkr.ecr.<region>.amazonaws.com/express-t2s-app:latest .
+aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.<region>.amazonaws.com
+docker push <aws_account_id>.dkr.ecr.<region>.amazonaws.com/express-t2s-app:latest
+```
+
+### 5. Create image pull secret for EKS to access ECR
+```bash
+kubectl create secret docker-registry ecr-registry-secret \
+--docker-server=<aws_account_id>.dkr.ecr.<region>.amazonaws.com \
+--docker-username=AWS \
+--docker-password=$(aws ecr get-login-password --region <region>)
+```
+
+### 6. Create Kubernetes Deployment and Service
+
+📄 `deployment.yaml`
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: express-t2s-deployment
+  labels:
+    app: express-t2s
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: express-t2s
+  template:
+    metadata:
+      labels:
+        app: express-t2s
+    spec:
+      containers:
+        - name: express-t2s
+          image: <aws_account_id>.dkr.ecr.<region>.amazonaws.com/express-t2s-app:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+            limits:
+              cpu: '250m'
+              memory: '256Mi'
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      imagePullSecrets:
+        - name: ecr-registry-secret
+```
+
+📄 `service.yaml`
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: express-t2s-service
+  labels:
+    app: express-t2s
+spec:
+  type: LoadBalancer
+  selector:
+    app: express-t2s
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+```
+
+Apply the files:
+```bash
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+```
+
+### 7. Access the App Over the Internet
+```bash
+kubectl get svc express-t2s-service
+```
+Open the `EXTERNAL-IP` in your browser:
+```
+http://<external-ip>
 ```
 
 ---
