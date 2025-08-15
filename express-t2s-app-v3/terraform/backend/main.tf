@@ -4,11 +4,11 @@ provider "aws" {
 
 resource "aws_s3_bucket" "tf_backend" {
   bucket = var.bucket_name
-}
 
-resource "aws_s3_bucket_acl" "tf_backend_acl" {
-  bucket = aws_s3_bucket.tf_backend.id
-  acl    = "private"
+  tags = {
+    Name        = "Terraform Backend"
+    Environment = "Dev"
+  }
 }
 
 resource "aws_s3_bucket_versioning" "tf_backend_versioning" {
