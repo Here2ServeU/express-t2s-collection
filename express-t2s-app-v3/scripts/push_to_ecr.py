@@ -1,21 +1,61 @@
 import boto3
 import subprocess
+import sys
+import os
 
-repo_name = "t2s-express-app"
-region = "us-east-1"
-image_tag = "latest"
+REPO_NAME = "t2s-express-app"
+REGION = "us-east-1"
+IMAGE_TAG = "latest"
+DOCKERFILE_PATH = "./app"  # Path to the directory containing Dockerfile
 
-ecr = boto3.client('ecr', region_name=region)
-sts = boto3.client('sts')
+# Step 1: Get AWS account ID
+sts = boto3.client("sts")
 account_id = sts.get_caller_identity()["Account"]
-repo_uri = f"{account_id}.dkr.ecr.{region}.amazonaws.com/{repo_name}"
+repository_uri = f"{account_id}.dkr.ecr.{REGION}.amazonaws.com/{REPO_NAME}:{IMAGE_TAG}"
 
+# Step 2: Authenticate Docker to ECR
 try:
-    ecr.describe_repositories(repositoryNames=[repo_name])
-except ecr.exceptions.RepositoryNotFoundException:
-    ecr.create_repository(repositoryName=repo_name)
+    print("Logging in to ECR...")
+    login_cmd = subprocess.run(
+        ["aws", "ecr", "get-login-password", "--region", REGION],
+        check=True,
+        stdout=subprocess.PIPE,
+        text=True
+    )
+    subprocess.run(
+        [
+            "docker", "login",
+            "--username", "AWS",
+            "--password-stdin",
+            f"{account_id}.dkr.ecr.{REGION}.amazonaws.com"
+        ],
+        input=login_cmd.stdout,
+        check=True
+    )
+except subprocess.CalledProcessError:
+    print("Failed to authenticate with ECR")
+    sys.exit(1)
 
-subprocess.run(f"aws ecr get-login-password --region {region} | docker login --username AWS --password-stdin {repo_uri}", shell=True, check=True)
-subprocess.run(f"docker build -t {repo_name} .", shell=True, check=True)
-subprocess.run(f"docker tag {repo_name}:{image_tag} {repo_uri}:{image_tag}", shell=True, check=True)
-subprocess.run(f"docker push {repo_uri}:{image_tag}", shell=True, check=True)
+# Step 3: Create ECR repo if it doesn't exist
+ecr = boto3.client("ecr", region_name=REGION)
+try:
+    print(f"🔎 Checking if ECR repository '{REPO_NAME}' exists...")
+    ecr.describe_repositories(repositoryNames=[REPO_NAME])
+    print(f"Repository '{REPO_NAME}' already exists.")
+except ecr.exceptions.RepositoryNotFoundException:
+    print(f"Creating ECR repository '{REPO_NAME}'...")
+    ecr.create_repository(repositoryName=REPO_NAME)
+
+# Step 4: Build Docker image (Dockerfile is in ./app)
+print("Building Docker image...")
+subprocess.run(["docker", "build", "-t", f"{REPO_NAME}:{IMAGE_TAG}", DOCKERFILE_PATH], check=True)
+
+# Step 5: Tag the image
+print(️" agging Docker image...")
+subprocess.run(["docker", "tag", f"{REPO_NAME}:{IMAGE_TAG}", repository_uri], check=True)
+
+# Step 6: Push the image to ECR
+print("Pushing image to ECR...")
+subprocess.run(["docker", "push", repository_uri], check=True)
+
+print(f" Deployment complete: {repository_uri}")
