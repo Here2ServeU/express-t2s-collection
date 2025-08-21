@@ -31,10 +31,13 @@ Each app version is built on DevOps principles and infrastructure-as-code:
 
 - `express-t2s-app-v1`: Basic Node.js + Express app
 - `express-t2s-app-v2`: Adds Docker support and CI pipeline structure
-- `express-t2s-app-v3`: Includes GitHub Actions and AWS ECR deployment
-- `express-t2s-app-v4`: Adds ECS Fargate and Terraform infrastructure (Coming Out Soon)
-- `express-t2s-app-v5`: Adds EKS with ArgoCD, observability stack (Coming Out Soon)
-- `express-t2s-app-v6`: Adds AI-based automation and intelligent monitoring (Coming Out Soon)
+- `express-t2s-app-v3`: Includes AWS ECR, ECS and EKS deployment using Terraform
+- `express-t2s-app-v4`: Helm Charts for package management on EKS
+- `express-t2s-app-v5`: GitOps (ArgoCD), monitoring, and, observability stack
+- `express-t2s-app-v6`: Adding security to our EKS cluster (DevSecOps)
+- `express-t2s-app-v7`: FinOps for Cost monitoring
+- `express-t2s-app-v8`: SRE components are added to our Infra
+- `express-t2s-app-v9`: Adds AI-based automation and intelligent monitoring
 
 ---
 
@@ -63,25 +66,8 @@ express-t2s-app/
 │   └── ...
 │
 ├── express-t2s-app-v5/
-│   ├── terraform/
-│   │   ├── backend/
-│   │   │   └── backend.tf
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   └── ...
-│
-├── express-t2s-app-v6/
-│   ├── terraform/
-│   │   ├── backend/
-│   │   │   └── backend.tf
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   └──  k8s/
-│   │   ├── deployment.yaml
-│   │   ├── deployment.yaml
-│
+├── express-t2s-app-
+├── express-t2s-app-v6/v6/
 └── README.md
 ```
 
