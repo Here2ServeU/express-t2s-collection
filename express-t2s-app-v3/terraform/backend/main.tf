@@ -1,13 +1,14 @@
 provider "aws" {
-  region = var.region
+  region = var.aws_region
 }
 
 resource "aws_s3_bucket" "tf_backend" {
-  bucket = var.bucket_name
+  bucket        = var.bucket_name
+  force_destroy = true
 
   tags = {
-    Name        = "Terraform Backend"
-    Environment = "Dev"
+    Name        = "Terraform Backend Bucket"
+    Environment = var.environment
   }
 }
 
