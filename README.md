@@ -54,8 +54,6 @@ express-t2s-app/
 │   └── .dockerignore
 │
 ├── express-t2s-app-v3/
-│   └── .github/workflows/ci.yml
-│
 ├── express-t2s-app-v4/
 │   ├── terraform/
 │   │   ├── backend/
@@ -64,10 +62,11 @@ express-t2s-app/
 │   │   ├── variables.tf
 │   │   └── outputs.tf
 │   └── ...
-│
 ├── express-t2s-app-v5/
-├── express-t2s-app-
-├── express-t2s-app-v6/v6/
+├── express-t2s-app-v6/
+├── express-t2s-app-v7/
+├── express-t2s-app-v8/
+├── express-t2s-app-v9/
 └── README.md
 ```
 
