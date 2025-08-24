@@ -1,0 +1,6 @@
+name: CI/CD Pipeline — Build Image & Deploy to EKS via Terraform
+
+#on:
+#  push:
+#    branches:
+      - main
