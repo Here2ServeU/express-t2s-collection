@@ -30,14 +30,15 @@ Our long-term vision is to build a mentorship system that is:
 Each app version is built on DevOps principles and infrastructure-as-code:
 
 - `express-t2s-app-v1`: Basic Node.js + Express app
-- `express-t2s-app-v2`: Adds Docker support and CI pipeline structure
+- `express-t2s-app-v2`: Adds Docker support
 - `express-t2s-app-v3`: Includes AWS ECR, ECS and EKS deployment using Terraform
-- `express-t2s-app-v4`: Helm Charts for package management on EKS
-- `express-t2s-app-v5`: GitOps (ArgoCD), monitoring, and, observability stack
-- `express-t2s-app-v6`: Adding security to our EKS cluster (DevSecOps)
-- `express-t2s-app-v7`: FinOps for Cost monitoring
-- `express-t2s-app-v8`: SRE components are added to our Infra
-- `express-t2s-app-v9`: Adds AI-based automation and intelligent monitoring
+- `express-t2s-app-v4`: Automate using CI/CD: GitHub Actions (Jenkins, GitLab, optional)
+- `express-t2s-app-v5`: Helm Charts for package management on EKS
+- `express-t2s-app-v6`: GitOps (ArgoCD), monitoring, and, observability stack
+- `express-t2s-app-v7`: Adding security to our EKS cluster (DevSecOps)
+- `express-t2s-app-v8`: FinOps for Cost monitoring
+- `express-t2s-app-v9`: SRE components are added to our Infra
+- `express-t2s-app-v10`: Adds AI-based automation and intelligent monitoring
 
 ---
 
