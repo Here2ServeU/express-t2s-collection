@@ -1,213 +1,152 @@
-# Express T2S App - Beginner-Friendly Guide (Version 2)
 
-Welcome to the **T2S Express App** — an easy-to-follow project designed for complete beginners who want to learn how to build, package, and deploy a web application like a pro! This version is ideal even for those with no technical background.
+# Guide: Deploy Express App with Docker and Push to AWS ECR
 
-## What Are We Building?
+This guide walks you through containerizing the Express app in **express-t2s-app-v2**, then pushing it to AWS Elastic Container Registry (ECR) using both a Bash script and a Python script.
 
-We’re building a simple web app using **Node.js** and **Express**, turning it into a **Docker container**, and deploying it to **Amazon Web Services (AWS)** using **ECR** and **Fargate/ECS**.
+---
 
-## Tools We’ll Use (Explained Simply)
+## Prerequisites
 
-- **Node.js + Express** – Makes your app run in the backend.
-- **Docker** – Packages your app into a portable container.
-- **AWS CLI** – Allows you to interact with AWS from your computer.
-- **GitHub Actions** – Automates deployment when you push code.
-- **Python/Bash/Terraform Scripts** – Help automate complex tasks step-by-step.
+Before starting, ensure you have:
+
+- Docker installed and running
+- AWS CLI configured (`aws configure`)
+- An ECR repository created (e.g., `t2s-express-app`)
+- Your AWS credentials ready
+
+---
 
 ## Folder Structure
 
 ```
 express-t2s-app-v2/
+├── public/
+├── scripts/
+│   ├── push_to_ecr.sh
+│   └── push_to_ecr.py
+├── terraform/
 ├── Dockerfile
 ├── index.js
 ├── package.json
-├── scripts/
-│   ├── push_to_ecr.py
-│   └── push_to_ecr.sh
-├── terraform/
-│   ├── main.tf
-│   └── variables.tf
-└── README.md
+└── ...
 ```
 
-## 1. Install Python
+---
 
-**Windows:**
-- Visit https://www.python.org/downloads/windows/
-- Download and install Python.
-- During setup, make sure to check “Add Python to PATH”.
+## Step 1: Build the Docker Image
 
-**Mac:**
-- Open Terminal.
-- Run: `brew install python`
-
-## 2. Install and Configure AWS CLI
-
-Install AWS CLI:
-- Windows: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-windows.html
-- Mac: Run in Terminal: `brew install awscli`
-
-Configure AWS CLI:
 ```bash
-aws configure
+docker build -t t2s-express-app .
 ```
-You will enter:
-- Your AWS access key
-- Your secret key
-- Your preferred region (e.g. `us-east-1`)
 
-## 3. Build Docker Image
+This command uses the `Dockerfile` to create a container image named `t2s-express-app`.
 
-This command packages your app into a container:
+---
+
+## Step 2: Run the Image Locally (Optional)
+
+Test it locally before pushing:
+
 ```bash
-docker build -t t2s-web-app .
+docker run -p 3000:3000 t2s-express-app
 ```
 
-## 4. Use Python Script to Push to AWS ECR
+Then open your browser at: [http://localhost:3000](http://localhost:3000)
 
-**File: `scripts/push_to_ecr.py`**
-```python
-import boto3
-import subprocess
+---
 
-repo_name = "t2s-express-app"
-region = "us-east-1"
-image_tag = "latest"
+## Step 3: Push Image to AWS ECR
 
-ecr = boto3.client('ecr', region_name=region)
-sts = boto3.client('sts')
-account_id = sts.get_caller_identity()["Account"]
-repo_uri = f"{account_id}.dkr.ecr.{region}.amazonaws.com/{repo_name}"
+### Option A: Use Bash Script
 
-try:
-    ecr.describe_repositories(repositoryNames=[repo_name])
-except ecr.exceptions.RepositoryNotFoundException:
-    ecr.create_repository(repositoryName=repo_name)
+Navigate to the scripts folder and run:
 
-subprocess.run(f"aws ecr get-login-password --region {region} | docker login --username AWS --password-stdin {repo_uri}", shell=True, check=True)
-subprocess.run(f"docker build -t {repo_name} .", shell=True, check=True)
-subprocess.run(f"docker tag {repo_name}:{image_tag} {repo_uri}:{image_tag}", shell=True, check=True)
-subprocess.run(f"docker push {repo_uri}:{image_tag}", shell=True, check=True)
-```
-
-Run the script:
 ```bash
-python3 scripts/push_to_ecr.py
+cd scripts
+bash push_to_ecr.sh
 ```
 
-## 5. Use Bash Shell Script Instead
+The script will:
+- Authenticate Docker with ECR
+- Tag the image with your AWS account ID
+- Push the image to your ECR repository
 
-**File: `scripts/push_to_ecr.sh`**
+Update the script with your real values:
 ```bash
-#!/bin/bash
-REPO_NAME=t2s-express-app
+AWS_ACCOUNT_ID=780593603882
 REGION=us-east-1
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+REPO_NAME=t2s-express-app
 IMAGE_TAG=latest
-
-aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
-
-aws ecr describe-repositories --repository-names $REPO_NAME --region $REGION > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-  aws ecr create-repository --repository-name $REPO_NAME --region $REGION
-fi
-
-docker build -t $REPO_NAME .
-docker tag $REPO_NAME:$IMAGE_TAG $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
-docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG
 ```
 
-Run it:
+---
+
+### Option B: Use Python Script
+
 ```bash
-bash scripts/push_to_ecr.sh
+cd scripts
+python3 push_to_ecr.py
 ```
 
-## 6. Use Terraform to Create AWS ECR
+This script uses `boto3` to:
+- Authenticate
+- Create the repository if it doesn't exist
+- Tag and push your image
 
-**File: `terraform/main.tf`**
-```hcl
-provider "aws" {
-  region = var.region
-}
-
-resource "aws_ecr_repository" "app" {
-  name = var.repo_name
-}
-```
-
-**File: `terraform/variables.tf`**
-```hcl
-variable "region" {
-  description = "The AWS region to use"
-}
-
-variable "repo_name" {
-  description = "The name of the ECR repository"
-}
-
-variable "account_id" {
-  description = "Your AWS account ID"
-}
-```
-
-Run it:
+Make sure `boto3` is installed:
 ```bash
-cd terraform/
-terraform init
-terraform apply
+pip install boto3
 ```
 
-## Clean Up Docker
+---
 
-Stop containers:
+## Step 4: Confirm in AWS Console
+
+- Go to [ECR Console](https://console.aws.amazon.com/ecr)
+- Open your repository (`t2s-express-app`)
+- Confirm that the image appears with the `latest` tag
+
+---
+
+## Next Step
+
+Move to **v3** (`express-t2s-app-v3`) to learn how to deploy this image to ECS using Terraform.
+
+---
+
+## Cleanup (Optional)
+
+To remove the local Docker image and free up space:
+
 ```bash
-docker ps
-docker stop <container_id>
+docker rmi t2s-express-app
 ```
 
-Remove stopped containers:
+To remove all stopped containers:
+
 ```bash
 docker container prune
 ```
 
-Remove unused images:
+To remove all unused Docker images:
+
 ```bash
-docker image prune
+docker image prune -a
 ```
 
-Remove everything:
+To remove build cache:
+
 ```bash
-docker system prune -a
+docker builder prune
 ```
 
-## Python Virtual Environment
+---
 
-Create and activate environment:
-```bash
-python3 -m venv venv
-source venv/bin/activate     # Mac/Linux
-venv\Scripts\activate      # Windows
-```
+## Notes
 
-Deactivate:
-```bash
-deactivate
-```
+- Your `terraform/` folder is reserved for infrastructure setup (ECS deployment in next version).
+- This version is focused on containerization and ECR workflow.
 
-## Clean Up Terraform
+---
 
-Destroy all infrastructure:
-```bash
-terraform destroy
-```
-
-----
-
-## Author
-
-**Dr. Emmanuel Naweji (2025)**  
-Cloud | DevOps | SRE | FinOps | AI Mentor  
-GitHub: [Here2ServeU](https://github.com/Here2ServeU)
-LinkedIn: [emmanuelnaweji](https://www.linkedin.com/in/ready2assist/) 
-Medium: [@here2serveyou](https://medium.com/@here2serveyou)  
-Book a Free 30-Minute Consultation: [naweji.setmore.com](https://here4you.setmore.com/emmanuel)
+© 2025 Emmanuel Naweji • Transformed 2 Succeed (T2S)
