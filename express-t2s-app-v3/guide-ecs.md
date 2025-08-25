@@ -49,7 +49,7 @@ subnet_ids     = ["subnet-xxxx", "subnet-yyyy"]
 ### Step 2: Initialize Terraform
 
 ```bash
-cd terraform
+cd terraform/ecs
 terraform init
 ```
 
