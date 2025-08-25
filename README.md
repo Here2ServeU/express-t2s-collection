@@ -38,7 +38,7 @@ This monorepo will help you:
 |----------------------|--------------------------------------------------|
 | express-t2s-app-v1   | Basic Node.js + Express application              |
 | express-t2s-app-v2   | Docker containerization added                    |
-| express-t2s-app-v3   | Deployed to AWS ECS + ECR via Terraform          |
+| express-t2s-app-v3   | Deployed to AWS ECR + ECS + EKS via Terraform          |
 | express-t2s-app-v4   | GitHub Actions CI/CD pipelines                   |
 | express-t2s-app-v5   | Helm package manager support for EKS             |
 | express-t2s-app-v6   | GitOps, monitoring, and observability stack      |
