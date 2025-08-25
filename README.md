@@ -87,7 +87,7 @@ cd express-t2s-app/express-t2s-app-v3
 code guide.md  # Or use any markdown viewer/editor
 ```
 
-🛠️ Each version builds upon the previous one — feel free to explore them in order or jump to the one you need.
+Each version builds upon the previous one — feel free to explore them in order or jump to the one you need.
 
 ---
 
