@@ -1,44 +1,51 @@
+
 # Express T2S App Monorepo
 
 ## Overview
 
-This repository is the monorepo for the evolving Express-based web applications that support the mission of **Transformed 2 Succeed (T2S)**. Each version (`v1`, `v2`, etc.) represents a progressive stage of the Node.js + Express app from MVP to a production-ready, cloud-native, DevOps-enabled platform.
+Welcome to the Express T2S App Monorepo, a structured collection of Node.js + Express applications designed to power the mission of **Transformed 2 Succeed (T2S)**.
 
-Our long-term vision is to build a mentorship system that is:
-- Containerized using Docker
-- Deployed via Terraform on AWS (ECR, ECS, EKS)
-- Monitored and observable
+Each versioned folder (v1, v2, v3, etc.) reflects a milestone in building a secure, scalable, and production-ready web platform using DevOps and Cloud best practices.
+
+Our long-term goal is to deliver a mentorship and learning system that is:
+- Dockerized for consistency across environments
+- Cloud-deployed via Terraform (ECR, ECS, EKS on AWS)
 - Secured with IAM, WAF, and DevSecOps scanning
-- Scalable, cost-efficient, and highly available
+- Observable with tools like Prometheus and Grafana
+- Cost-aware through FinOps integration
+- Automated with CI/CD, GitOps, and AI-enhanced monitoring
 
 ---
 
-## Goals
+## Project Goals
 
-- Containerize each app version using Docker
-- Push container images to AWS ECR
-- Deploy using Terraform with ECS and EKS
-- Implement GitHub Actions for CI/CD
-- Add observability and monitoring (Grafana, Prometheus, CloudWatch)
-- Integrate DevSecOps (Trivy, Checkov)
-- Enable secure, automated mentorship workflows
+This monorepo will help you:
+- Build Docker images for each app version
+- Push to Amazon ECR (Elastic Container Registry)
+- Deploy using ECS and EKS with Terraform
+- Automate CI/CD using GitHub Actions
+- Integrate observability (Prometheus, Grafana, CloudWatch)
+- Secure infrastructure using Trivy, Checkov, IAM, and WAF
+- Optimize infrastructure costs using FinOps tools
+- Add Site Reliability Engineering (SRE) best practices
+- Incorporate AI for automated health checks and alerts
 
 ---
 
-## Versions and Status
+## Version Guide
 
-Each app version is built on DevOps principles and infrastructure-as-code:
-
-- `express-t2s-app-v1`: Basic Node.js + Express app
-- `express-t2s-app-v2`: Adds Docker support
-- `express-t2s-app-v3`: Includes AWS ECR, ECS and EKS deployment using Terraform
-- `express-t2s-app-v4`: Automate using CI/CD: GitHub Actions (Jenkins, GitLab, optional)
-- `express-t2s-app-v5`: Helm Charts for package management on EKS
-- `express-t2s-app-v6`: GitOps (ArgoCD), monitoring, and, observability stack
-- `express-t2s-app-v7`: Adding security to our EKS cluster (DevSecOps)
-- `express-t2s-app-v8`: FinOps for Cost monitoring
-- `express-t2s-app-v9`: SRE components are added to our Infra
-- `express-t2s-app-v10`: Adds AI-based automation and intelligent monitoring
+| Version              | Description                                      |
+|----------------------|--------------------------------------------------|
+| express-t2s-app-v1   | Basic Node.js + Express application              |
+| express-t2s-app-v2   | Docker containerization added                    |
+| express-t2s-app-v3   | Deployed to AWS ECS + ECR via Terraform          |
+| express-t2s-app-v4   | GitHub Actions CI/CD pipelines                   |
+| express-t2s-app-v5   | Helm package manager support for EKS             |
+| express-t2s-app-v6   | GitOps, monitoring, and observability stack      |
+| express-t2s-app-v7   | DevSecOps: Policies, image scanning, IAM hardening |
+| express-t2s-app-v8   | FinOps: Real-time cost insights                  |
+| express-t2s-app-v9   | SRE tools: SLOs, alerting, dashboards            |
+| express-t2s-app-v10  | AI integration: Self-healing and predictive automation |
 
 ---
 
@@ -46,299 +53,43 @@ Each app version is built on DevOps principles and infrastructure-as-code:
 
 ```
 express-t2s-app/
-├── express-t2s-app-v1/
-│   ├── public/
-│   └── index.js
-│
-├── express-t2s-app-v2/
-│   ├── Dockerfile
-│   └── .dockerignore
-│
-├── express-t2s-app-v3/
-├── express-t2s-app-v4/
-│   ├── terraform/
-│   │   ├── backend/
-│   │   │   └── backend.tf
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   └── ...
-├── express-t2s-app-v5/
-├── express-t2s-app-v6/
-├── express-t2s-app-v7/
-├── express-t2s-app-v8/
-├── express-t2s-app-v9/
+├── express-t2s-app-v1/      # Hello World + Node.js + Express
+├── express-t2s-app-v2/      # Docker + Local Container
+├── express-t2s-app-v3/      # Terraform + AWS ECS Deployment
+├── express-t2s-app-v4/      # GitHub Actions CI/CD
+├── express-t2s-app-v5/      # Helm + Kubernetes
+├── express-t2s-app-v6/      # GitOps, Grafana, Prometheus
+├── express-t2s-app-v7/      # DevSecOps: Trivy, Checkov, Kyverno
+├── express-t2s-app-v8/      # FinOps Dashboard Integration
+├── express-t2s-app-v9/      # Site Reliability Engineering
+├── express-t2s-app-v10/     # AI Monitoring & Automation
 └── README.md
 ```
 
 ---
 
-## Remote Backend Setup
+## How to Use This Project
 
-To enable collaborative and secure Terraform state management, each version uses an **S3 backend with DynamoDB locking**:
+Each versioned subproject includes its own `guide.md` file with detailed instructions for:
+- Building and testing the app
+- Infrastructure deployment using Terraform
+- CI/CD automation using GitHub Actions
+- Kubernetes configuration (if applicable)
+- Security and cost optimization
 
-1. Manually create or bootstrap:
-   - S3 bucket: `t2s-terraform-state`
-   - DynamoDB table: `t2s-terraform-lock`
-
-2. Add this to `terraform/backend/backend.tf` for the version:
-
-```hcl
-terraform {
-  backend "s3" {
-    bucket         = "t2s-terraform-state"
-    key            = "express-t2s-app/<version>/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "t2s-terraform-lock"
-    encrypt        = true
-  }
-}
-```
-
-3. Initialize Terraform backend:
+To begin working with a specific version:
 
 ```bash
-cd terraform/backend
-terraform init
+# Navigate to the desired version folder
+cd express-t2s-app/express-t2s-app-v3
+
+# Open the detailed guide
+code guide.md  # Or use any markdown viewer/editor
 ```
+
+🛠️ Each version builds upon the previous one — feel free to explore them in order or jump to the one you need.
 
 ---
 
-## Local App Test (v1)
-
-```bash
-cd express-t2s-app-v1
-npm install
-node index.js
-```
-
-Visit: `http://localhost:3000`
-
----
-
-## Cloud Deployment (v3+) - ECS Deployment
-
-1. Ensure Docker image is built and pushed to ECR.
-```bash
-chmod +x build_and_push.sh
-./build_and_push.sh
-```
-
-3. Navigate to the Terraform directory of the version:
-
-```bash
-cd express-t2s-app-v3/terraform
-cd /ecr
-```
-
-3. Apply the Terraform deployment:
-
-```bash
-terraform init
-terraform apply
-```
-
-4. Access the application using the output `load_balancer_dns` or domain name (ecs/eks).
-- Accessing the App through ECS
-```bash
-# Find the Public IP of your ECS Task by running this command first:
-aws ecs list-tasks \
-  --cluster <your-cluster-name> \
-  --service-name <your-service-name> \
-  --query "taskArns[]" --output text
-
-# Copy the Task ARN, then run the following command:
-aws ecs describe-tasks \
-  --cluster <your-cluster-name> \
-  --tasks <your-task-arn> \
-  --query "tasks[].attachments[].details[?name=='publicIPv4Address'].value" \
-  --output text
-```
-- The above will output the Public IP.
-- Test Access:
-```bash
-# On your browser or use the 'curl' command:
-curl http://<public-ip>:3000
-```
-- If you cannot reach your Application over the browser. (1) Make sure your Security Group allows inbound TCP traffic on port 3000 from 0.0.0.0/0. (2) Make sure your app listens on 0.0.0.0, not localhost.
-
-### Recommended (Use an Application Load Balancer)
-- Using task public IPs directly is fragile (IP changes if the task restarts).
-
-- Instead:
-	•	Create an ALB in your VPC.
-	•	Add a Target Group for port 3000.
-	•	Attach the ECS service to the target group.
-	•	Point a domain or use the ALB DNS name to access your app.
-
-- A section on the Terraform scripts to deploy the Application behind an ALB, which gives you a single stable URL instead of chasing changing IPs. 
-
----
-## Clean Up
-```bash
-# Deleting the Backend
-cd ..                                        #To move up to express-t2s-app-v4/terraform
-aws s3 rm s3://emmanuel-tf-state --recursive #To clean bucket via script (non-versioned only)
-terraform destroy --auto-approve
-```
-
-- When using versioning, create a file and name it, delete_all_versions.py
-- Add the following content ensuring you use your Bucket name:
-```py
-import boto3
-
-bucket_name = "emmanuel-tf-state"
-s3 = boto3.client("s3")
-
-versions = s3.list_object_versions(Bucket=bucket_name)
-
-for item in versions.get('Versions', []) + versions.get('DeleteMarkers', []):
-    print(f"Deleting {item['Key']} (version: {item['VersionId']})")
-    s3.delete_object(Bucket=bucket_name, Key=item['Key'], VersionId=item['VersionId'])
-```
--Run the following commands: 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install boto3
-python delete_all_versions.py
-deactivate
-rm -rf venv/
-```
-
-# Deleting the other Resources
-```
-cd ecr (or ecs)
-terraform destroy --auto-approve
-```
-
----
-
-## Cloud Deployment (v3+) - Step-by-Step Deploying Express App on EKS
-
-### 1. Clone and navigate to the Terraform folder
-```bash
-cd express-t2s-app/express-t2s-app-v6/terraform
-```
-
-### 2. Initialize and apply the Terraform configuration
-```bash
-terraform init
-terraform apply -auto-approve
-```
-
-### 3. Configure kubectl to connect to your EKS cluster
-```bash
-aws eks --region <region> update-kubeconfig --name express-t2s-cluster
-```
-
-### 4. Build and Push Docker Image to ECR
-```bash
-cd ../../express-t2s-app-v2
-docker build -t <aws_account_id>.dkr.ecr.<region>.amazonaws.com/express-t2s-app:latest .
-aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.<region>.amazonaws.com
-docker push <aws_account_id>.dkr.ecr.<region>.amazonaws.com/express-t2s-app:latest
-```
-
-### 5. Create image pull secret for EKS to access ECR
-```bash
-kubectl create secret docker-registry ecr-registry-secret \
---docker-server=<aws_account_id>.dkr.ecr.<region>.amazonaws.com \
---docker-username=AWS \
---docker-password=$(aws ecr get-login-password --region <region>)
-```
-
-### 6. Create Kubernetes Deployment and Service
-
-📄 `deployment.yaml`
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: express-t2s-deployment
-  labels:
-    app: express-t2s
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: express-t2s
-  template:
-    metadata:
-      labels:
-        app: express-t2s
-    spec:
-      containers:
-        - name: express-t2s
-          image: <aws_account_id>.dkr.ecr.<region>.amazonaws.com/express-t2s-app:latest
-          ports:
-            - containerPort: 3000
-          resources:
-            requests:
-              cpu: '100m'
-              memory: '128Mi'
-            limits:
-              cpu: '250m'
-              memory: '256Mi'
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 15
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-      imagePullSecrets:
-        - name: ecr-registry-secret
-```
-
-📄 `service.yaml`
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: express-t2s-service
-  labels:
-    app: express-t2s
-spec:
-  type: LoadBalancer
-  selector:
-    app: express-t2s
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 3000
-```
-
-Apply the files:
-```bash
-kubectl apply -f deployment.yaml
-kubectl apply -f service.yaml
-```
-
-### 7. Access the App Over the Internet
-```bash
-kubectl get svc express-t2s-service
-```
-Open the `EXTERNAL-IP` in your browser:
-```
-http://<external-ip>
-```
-
----
-
-## Final Outcome
-
-By completing this monorepo series, we will achieve:
-- Production-grade cloud infrastructure
-- CI/CD & GitOps workflows
-- Secure, observable applications
-- Real-world DevOps portfolio experience
-
----
-
-© 2025 Emmanuel Naweji. All rights reserved.
+© 2025 Emmanuel Naweji. All rights reserved.  
+This project is part of the Transformed 2 Succeed (T2S) infrastructure training ecosystem.
