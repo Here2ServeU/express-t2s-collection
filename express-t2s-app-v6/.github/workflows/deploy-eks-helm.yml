@@ -1,0 +1,94 @@
+name: CI/CD Pipeline — Deploy to EKS with Helm
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO_NAME: express-t2s-app
+  ECR_IMAGE_TAG: latest
+  EKS_CLUSTER_NAME: t2s-eks-cluster
+
+jobs:
+  deploy-to-eks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Docker Image to ECR
+        run: |
+          docker build -t $ECR_REPO_NAME:$ECR_IMAGE_TAG ./app
+          docker tag $ECR_REPO_NAME:$ECR_IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO_NAME:$ECR_IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO_NAME:$ECR_IMAGE_TAG
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init (EKS)
+        working-directory: terraform/eks
+        run: terraform init
+
+      - name: Terraform Apply (Deploy EKS Infra + App)
+        working-directory: terraform/eks
+        run: |
+          terraform apply -auto-approve \
+            -var="image_url=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ env.ECR_IMAGE_TAG }}"
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_REGION
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+
+      - name: Add Helm Repos
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add kyverno https://kyverno.github.io/kyverno
+          helm repo add loki https://grafana.github.io/loki/charts
+          helm repo update
+
+      - name: Deploy NGINX Ingress
+        run: |
+          helm upgrade --install ingress-nginx ingress-nginx \
+            --repo https://kubernetes.github.io/ingress-nginx \
+            --namespace ingress-nginx --create-namespace
+
+      - name: Deploy Prometheus
+        run: |
+          helm upgrade --install prometheus prometheus-community/prometheus \
+            --namespace monitoring --create-namespace
+
+      - name: Deploy Grafana
+        run: |
+          helm upgrade --install grafana grafana/grafana \
+            --namespace monitoring \
+            --set adminPassword=admin \
+            --set service.type=LoadBalancer
+
+      - name: Deploy Kyverno
+        run: |
+          helm upgrade --install kyverno kyverno/kyverno \
+            --namespace kyverno --create-namespace
+
+      - name: Deploy Loki
+        run: |
+          helm upgrade --install loki loki/loki-stack \
+            --namespace monitoring \
+            --set grafana.enabled=false
