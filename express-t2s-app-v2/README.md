@@ -1,4 +1,3 @@
-
 # Guide: Deploy Express App with Docker and Push to AWS ECR
 
 This guide walks you through containerizing the Express app in **express-t2s-app-v2**, then pushing it to AWS Elastic Container Registry (ECR) using both a Bash script and a Python script.
@@ -66,11 +65,6 @@ cd scripts
 bash push_to_ecr.sh
 ```
 
-The script will:
-- Authenticate Docker with ECR
-- Tag the image with your AWS account ID
-- Push the image to your ECR repository
-
 Update the script with your real values:
 ```bash
 AWS_ACCOUNT_ID=780593603882
@@ -83,20 +77,30 @@ IMAGE_TAG=latest
 
 ### Option B: Use Python Script
 
+1. Navigate to the scripts folder:
+
 ```bash
 cd scripts
-python3 push_to_ecr.py
+```
+
+2. (Recommended) Set up a virtual environment:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+pip install boto3
+```
+
+3. Run the Python script:
+
+```bash
+python push_to_ecr.py
 ```
 
 This script uses `boto3` to:
-- Authenticate
+- Authenticate with AWS
 - Create the repository if it doesn't exist
-- Tag and push your image
-
-Make sure `boto3` is installed:
-```bash
-pip install boto3
-```
+- Tag and push your Docker image
 
 ---
 
@@ -108,37 +112,33 @@ pip install boto3
 
 ---
 
-## Next Step
+## Step 5: Clean Up (Optional)
 
-Move to **v3** (`express-t2s-app-v3`) to learn how to deploy this image to ECS using Terraform.
+To clean up Docker resources locally:
+
+```bash
+# Stop all containers
+docker stop $(docker ps -aq)
+
+# Remove all containers
+docker rm $(docker ps -aq)
+
+# Remove all images (use with caution)
+docker rmi $(docker images -q)
+```
+
+To deactivate and delete your virtual environment (optional):
+
+```bash
+deactivate
+rm -rf venv
+```
 
 ---
 
-## Cleanup (Optional)
+## Next Step
 
-To remove the local Docker image and free up space:
-
-```bash
-docker rmi t2s-express-app
-```
-
-To remove all stopped containers:
-
-```bash
-docker container prune
-```
-
-To remove all unused Docker images:
-
-```bash
-docker image prune -a
-```
-
-To remove build cache:
-
-```bash
-docker builder prune
-```
+Move to **v3** (`express-t2s-app-v3`) to learn how to deploy this image to ECS using Terraform.
 
 ---
 
