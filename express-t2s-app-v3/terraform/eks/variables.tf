@@ -1,16 +1,19 @@
-variable "region" {
-  default = "us-east-1"
+# ────────────────────────────────
+# outputs.tf
+# ────────────────────────────────
+output "eks_cluster_name" {
+  value = module.eks.cluster_name
 }
 
-variable "cluster_name" {
-  default = "t2s-eks-cluster"
+output "eks_cluster_endpoint" {
+  value = module.eks.cluster_endpoint
 }
 
-variable "subnets" {
-  type = list(string)
+output "eks_kubeconfig" {
+  value = module.eks.kubeconfig_filename
 }
 
-variable "vpc_id" {
-  type = string
+output "load_balancer_dns" {
+  value = kubernetes_service.app.status[0].load_balancer[0].ingress[0].hostname
+  description = "Public DNS of the ALB"
 }
-
