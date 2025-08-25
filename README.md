@@ -53,7 +53,7 @@ This monorepo will help you:
 
 ```
 express-t2s-app/
-├── express-t2s-app-v1/      # Hello World + Node.js + Express
+├── express-t2s-app-v1/      # HTML + Node.js + Express
 ├── express-t2s-app-v2/      # Docker + Local Container
 ├── express-t2s-app-v3/      # Terraform + AWS ECS Deployment
 ├── express-t2s-app-v4/      # GitHub Actions CI/CD
