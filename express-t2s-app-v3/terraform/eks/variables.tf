@@ -1,51 +1,68 @@
-# Stack Name
 variable "cluster_name" {
-  type = string
+  type        = string
+  description = "EKS cluster name"
+  default     = "prod-cluster"
 }
 
-# Worker Node instance size
-variable "instance_size" {
-  type = string
+variable "region" {
+  type        = string
+  description = "AWS region"
+  default     = "us-east-1"
 }
 
-# Region
-variable "region" {}
-
-# Environment
 variable "env" {
-  type    = string
-  default = "Prod"
+  type        = string
+  description = "Environment tag"
+  default     = "Prod"
 }
 
-# Type
 variable "type" {
-  type    = string
-  default = "Production"
+  type        = string
+  description = "Type tag"
+  default     = "Production"
 }
 
-# Instance count
-variable "instance_count" {
-  type = string
+variable "vpc_cidr" {
+  type        = string
+  description = "VPC CIDR block"
+  default     = "10.0.0.0/16"
 }
 
-# AMI ID
-variable "ami_id" {
-  type = string
-}
-
-# Cluster Version
 variable "cluster_version" {
-  type = string
+  type        = string
+  description = "EKS Kubernetes version"
+  default     = "1.27"
 }
 
-# VPC CNI Version
-variable "vpc-cni-version" {
-  type        = string
-  description = "VPC CNI Version"
+variable "node_instance_types" {
+  type        = list(string)
+  description = "Managed node group instance types"
+  default     = ["t3.medium"]
 }
 
-# Kube Proxy Version
-variable "kube-proxy-version" {
+variable "node_desired_size" {
+  type        = number
+  default     = 2
+}
+
+variable "node_min_size" {
+  type        = number
+  default     = 1
+}
+
+variable "node_max_size" {
+  type        = number
+  default     = 3
+}
+
+variable "vpc_cni_version" {
   type        = string
-  description = "Kube Proxy Version"
+  description = "AWS VPC CNI addon version (e.g., v1.18.0-eksbuild.1)"
+  default     = "v1.18.0-eksbuild.1"
+}
+
+variable "kube_proxy_version" {
+  type        = string
+  description = "Kube-proxy addon version (e.g., v1.27.10-eksbuild.2)"
+  default     = "v1.27.10-eksbuild.2"
 }
