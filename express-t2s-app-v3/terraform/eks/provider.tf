@@ -1,1 +1,3 @@
-# provider.tf for eks module or chart
+provider "aws" {
+  region = var.region
+}
