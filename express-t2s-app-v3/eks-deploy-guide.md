@@ -142,12 +142,53 @@ chmod +x terraform/ecr/build_and_push.sh
 Update `k8s/deployment.yaml` and `k8s/service.yaml` with the ECR image URL:
 
 ```yaml
-containers:
-- name: express
-  image: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app:latest
-  ports:
-  - containerPort: 3000
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: express-t2s-deployment
+  labels:
+    app: express-t2s
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: express-t2s
+  template:
+    metadata:
+      labels:
+        app: express-t2s
+    spec:
+      containers:
+        - name: express-t2s
+          image: <aws_account_id>.dkr.ecr.<region>.amazonaws.com/express-t2s-app:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      imagePullSecrets:
+        - name: ecr-registry-secret
 ```
+
+`service.yaml`
+```yaml
+
 
 Apply the manifests:
 
