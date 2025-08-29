@@ -1,1 +1,11 @@
-# main.tf for eks module or chart
+module "vpc" {
+  source = "./modules/vpc"
+}
+
+module "iam" {
+  source = "./modules/iam"
+}
+
+module "eks" {
+  source = "./modules/eks"
+}
