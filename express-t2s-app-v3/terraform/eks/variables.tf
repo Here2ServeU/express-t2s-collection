@@ -13,13 +13,13 @@ variable "region" {
 variable "env" {
   type        = string
   description = "Environment tag"
-  default     = "Prod"
+  default     = "dev"
 }
 
 variable "type" {
   type        = string
   description = "Type tag"
-  default     = "Production"
+  default     = "Development"
 }
 
 variable "vpc_cidr" {
@@ -31,7 +31,7 @@ variable "vpc_cidr" {
 variable "cluster_version" {
   type        = string
   description = "EKS Kubernetes version"
-  default     = "1.27"
+  default     = "1.29"
 }
 
 variable "node_instance_types" {
