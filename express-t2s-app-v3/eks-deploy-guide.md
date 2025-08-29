@@ -91,17 +91,41 @@ After Terraform finishes, run this script to build, tag, and push the app:
 
 ```bash
 #!/bin/bash
+
+set -e
+
+# Set working directories
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="${SCRIPT_DIR}/../../app"
 AWS_REGION="us-east-1"
-AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
-ECR_REPO="t2s-express-app"
+REPO_NAME="t2s-express-app"
+IMAGE_TAG="latest"
 
-# Authenticate Docker with ECR
-aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+# Validate app directory exists
+if [ ! -d "$APP_DIR" ]; then
+  echo "Error: Application directory not found at: $APP_DIR"
+  exit 1
+fi
 
-# Build, tag, and push image
-docker build -t $ECR_REPO ../express-t2s-app-v3/app
-docker tag $ECR_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:latest
-docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:latest
+# Get AWS Account ID
+ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+
+# Compose ECR URI
+ECR_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}"
+
+echo "Logging into AWS ECR..."
+aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_URI"
+
+echo "Building Docker image from: $APP_DIR"
+docker build -t "${REPO_NAME}:${IMAGE_TAG}" "$APP_DIR"
+
+echo "Tagging Docker image"
+docker tag "${REPO_NAME}:${IMAGE_TAG}" "${ECR_URI}:${IMAGE_TAG}"
+
+echo "Pushing image to ECR: ${ECR_URI}:${IMAGE_TAG}"
+docker push "${ECR_URI}:${IMAGE_TAG}"
+
+echo "Image pushed successfully."
 ```
 
 Save it as `scripts/push-to-ecr.sh` and run:
