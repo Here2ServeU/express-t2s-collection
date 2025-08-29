@@ -1,159 +1,176 @@
-# Guide: Deploy Express App on Amazon EKS using Terraform
+# Guide: Deploy Express App on Amazon EKS with Terraform + ECR
 
-This guide helps you deploy the containerized Express app in **express-t2s-app-v3** on Amazon EKS using Terraform. It assumes the image is already pushed to ECR.
+This guide helps you deploy the containerized **Express App** (`express-t2s-app-v3`) on **Amazon EKS** using Terraform. The workflow provisions **ECR + EKS** with Terraform, builds & pushes the app image, and deploys Kubernetes manifests from the `k8s/` directory.  
 
 ---
 
 ## Prerequisites
 
-Ensure you have the following installed and configured:
+Install and configure:
 
-- AWS CLI (`aws configure`)
-- kubectl (connected to EKS)
-- eksctl
-- Terraform (v1.3+ recommended)
-- Docker (for local builds)
-- An ECR repository with your app image (`t2s-express-app:latest`)
-- Your IAM user must have the necessary permissions
+- [AWS CLI](https://docs.aws.amazon.com/cli/) (`aws configure`)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [Terraform](https://developer.hashicorp.com/terraform/downloads) (v1.6+ recommended)
+- [Docker](https://docs.docker.com/get-docker/)
+
+Your IAM user/role must have permissions for **EKS, ECR, EC2, IAM, ELB, VPC, and S3**.
 
 ---
 
 ## Folder Structure
 
-```
-express-t2s-app-v3/
-├── app/
-├── k8s/
-├── scripts/
-└── terraform/
+```text
+express-t2s-collection/express-t2s-app-v3/eks/
+└── terraform/eks/
+    ├── backend.tf              # Remote backend (S3 + DynamoDB)
+    ├── main.tf               # Wires all modules
+    ├── variables.tf          # Root variables (must be configured)
+    ├── outputs.tf
+    ├── provider.tf
+    ├── versions.tf
+    └── modules/
+        ├── vpc/
+        ├── security-groups/
+        ├── iam/
+        ├── eks/
+        ├── alb/
+        └── ecr/              # (Optional) creates ECR repo for the app
 ```
 
 ---
 
-## Step 1: Review and Configure Terraform for EKS
+## Step 1: Configure Terraform Variables
 
-Navigate to the Terraform folder:
-
-```bash
-cd terraform/eks
-```
-
-Customize variables in `variables.tf` or use `terraform.tfvars` to set:
+In `terraform/eks/variables.tf` or a new `terraform.tfvars` file, set:
 
 ```hcl
-# ───── Deployment Options ─────
-region      = "us-east-1"
-create_vpc  = false  # Set to true to auto-create VPC and subnets
+region             = "us-east-1"
+cluster_name       = "t2s-eks-cluster"
+cluster_version    = "1.27"
 
-# ───── Use Existing Network ─────
-vpc_id      = "vpc-004194e2184e0d40d"
-subnet_ids  = ["subnet-0acca018b1cc5f306", "subnet-0dcc65506b8690621"]
+# Node group settings
+node_instance_types = ["t3.medium"]
+node_desired_size   = 2
+node_min_size       = 1
+node_max_size       = 3
 
-# ───── VPC Creation (if create_vpc = true) ─────
-vpc_name         = "t2s-vpc"
-vpc_cidr         = "10.0.0.0/16"
-azs              = ["us-east-1a", "us-east-1b"]
-private_subnets  = ["10.0.1.0/24", "10.0.2.0/24"]
-public_subnets   = ["10.0.101.0/24", "10.0.102.0/24"]
+# Add-on versions
+vpc_cni_version     = "v1.18.0-eksbuild.1"
+kube_proxy_version  = "v1.27.10-eksbuild.2"
 
-# ───── EKS & App Config ─────
-cluster_name    = "t2s-eks-cluster"
-cluster_version = "1.29"
-image_url       = "AWS_Account_ID.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app"
-image_tag       = "latest"
-container_name  = "t2s-container"
-container_port  = 3000
+# ECR repo name
+ecr_repo_name       = "t2s-express-app"
 ```
+
+**Important**: The backend is already configured in `terraform/backend/backend.tf` (S3 + DynamoDB). Replace bucket/table names before initializing.
 
 ---
 
 ## Step 2: Initialize and Apply Terraform
 
 ```bash
+cd terraform/eks
 terraform init
 terraform plan
-terraform apply
+terraform apply -auto-approve
 ```
 
-This will:
+This will create:
 
-- Create an EKS Cluster and Node Group
-- Generate a `kubeconfig` file
-- Deploy the Kubernetes resources
+- VPC, Subnets, Security Groups  
+- IAM Roles for EKS and Nodes  
+- EKS Cluster + Node Group  
+- AWS Load Balancer Controller  
+- ECR Repository (`t2s-express-app`)  
 
 ---
 
-## Step 3: Verify EKS Deployment
+## Step 3: Build and Push Docker Image to ECR
 
-After Terraform applies successfully:
+After Terraform finishes, run this script to build, tag, and push the app:
 
 ```bash
-kubectl get nodes
+#!/bin/bash
+AWS_REGION="us-east-1"
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+ECR_REPO="t2s-express-app"
+
+# Authenticate Docker with ECR
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+# Build, tag, and push image
+docker build -t $ECR_REPO ../express-t2s-app-v3/app
+docker tag $ECR_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:latest
+docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:latest
+```
+
+Save it as `scripts/push-to-ecr.sh` and run:
+
+```bash
+chmod +x scripts/push-to-ecr.sh
+./scripts/push-to-ecr.sh
+```
+
+---
+
+## Step 4: Deploy Express App to EKS
+
+Update `k8s/express.yaml` with the ECR image URL:
+
+```yaml
+containers:
+- name: express
+  image: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app:latest
+  ports:
+  - containerPort: 3000
+```
+
+Apply the manifests:
+
+```bash
+kubectl apply -f k8s/
 kubectl get pods
 kubectl get svc
 ```
 
-Then access the app using the LoadBalancer DNS from the `kubectl get svc` output.
+Copy the **EXTERNAL-IP** or DNS from the service and open it in your browser.
 
 ---
 
-## Step 4: Accessing the Application via ALB (AWS CLI or Console)
+## Step 5: Access via AWS Load Balancer Controller
 
-### Option A: AWS Console
-
-1. Go to the [AWS EC2 Console – Load Balancers](https://console.aws.amazon.com/ec2/v2/home?#LoadBalancers)
-2. Locate the ALB named `t2s-express-alb` (or the name defined in your variables)
-3. Copy the **DNS name** (e.g., `t2s-express-alb-1234567890.us-east-1.elb.amazonaws.com`)
-4. Open the DNS name in your browser
-
-> Make sure your security group allows inbound traffic on port 80 (HTTP).
-
-### Option B: AWS CLI
+The **Ingress + ALB** setup is handled by the ALB controller. Verify:
 
 ```bash
-aws elbv2 describe-load-balancers   --names t2s-express-alb   --region us-east-1   --query "LoadBalancers[0].DNSName"   --output text
+kubectl get ingress
 ```
 
-#### Or use it directly with curl:
+Or fetch the DNS from AWS:
 
 ```bash
-curl http://$(aws elbv2 describe-load-balancers   --names t2s-express-alb   --region us-east-1   --query "LoadBalancers[0].DNSName"   --output text)
-```
-
-### Check Security Group Access (Optional)
-
-```bash
-aws ec2 describe-security-groups   --filters Name=group-name,Values=t2s-eks-sg   --region us-east-1   --query "SecurityGroups[0].IpPermissions"
-```
-
-Allow traffic if needed:
-
-```bash
-aws ec2 authorize-security-group-ingress   --group-name t2s-eks-sg   --protocol tcp   --port 80   --cidr 0.0.0.0/0   --region us-east-1
+aws elbv2 describe-load-balancers --region us-east-1 --query "LoadBalancers[].DNSName"
 ```
 
 ---
 
-## Step 5: Cleanup (Destroy Resources)
+## Step 6: Cleanup
 
-To tear down the infrastructure when you're done:
+To remove all resources:
 
 ```bash
+cd terraform/eks
 terraform destroy
 ```
-
-Confirm when prompted.
 
 ---
 
 ## Next Steps
 
-To add monitoring and observability, proceed to **v4** or **v5**, where we introduce:
-
-- GitHub Actions for CI/CD
-- Helm Charts for package management
-- Prometheus/Grafana for monitoring
+- Automate image builds with **GitHub Actions**  
+- Use **Helm charts** for deployment packaging  
+- Add **Prometheus & Grafana** for observability  
+- Introduce **ArgoCD** for GitOps  
 
 ---
 
-© 2025 Emmanuel Naweji • Transformed 2 Succeed (T2S)
+© 2025 Dr Emmanuel Naweji • Transformed 2 Succeed (T2S)
