@@ -141,6 +141,7 @@ chmod +x terraform/ecr/build_and_push.sh
 
 Update `k8s/deployment.yaml` and `k8s/service.yaml` with the ECR image URL:
 
+`deployment.yaml`
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -188,7 +189,21 @@ spec:
 
 `service.yaml`
 ```yaml
-
+apiVersion: v1
+kind: Service
+metadata:
+  name: express-t2s-service
+  labels:
+    app: express-t2s
+spec:
+  type: LoadBalancer
+  selector:
+    app: express-t2s
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+```
 
 Apply the manifests:
 
