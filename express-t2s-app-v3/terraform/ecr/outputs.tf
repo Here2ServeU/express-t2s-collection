@@ -1,4 +1,3 @@
-output "ecr_repo_url" {
-  value       = aws_ecr_repository.app.repository_url
-  description = "URL of the created ECR repository"
+output "push_command" {
+  value = "docker push ${aws_ecr_repository.this.repository_url}:${var.image_tag}"
 }
