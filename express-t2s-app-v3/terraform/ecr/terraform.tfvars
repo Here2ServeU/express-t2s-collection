@@ -1,2 +1,3 @@
 region    = "us-east-1"
-repo_name = "t2s-express-app"
+repo_name = "express-t2s"
+image_tag = "latest"
