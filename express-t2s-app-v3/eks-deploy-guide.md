@@ -128,18 +128,18 @@ docker push "${ECR_URI}:${IMAGE_TAG}"
 echo "Image pushed successfully."
 ```
 
-Save it as `scripts/push-to-ecr.sh` and run:
+Save it as `build_and_push.sh` and run:
 
 ```bash
-chmod +x scripts/push-to-ecr.sh
-./scripts/push-to-ecr.sh
+chmod +x terraform/ecr/build_and_push.sh
+./terraform/ecr/build_and_push.sh
 ```
 
 ---
 
 ## Step 4: Deploy Express App to EKS
 
-Update `k8s/express.yaml` with the ECR image URL:
+Update `k8s/deployment.yaml` and `k8s/service.yaml` with the ECR image URL:
 
 ```yaml
 containers:
