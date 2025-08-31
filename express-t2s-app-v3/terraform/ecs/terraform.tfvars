@@ -1,14 +1,2 @@
-region            = "us-east-1"
-cluster_name      = "t2s-ecs-cluster"
-task_family       = "t2s-task-family"
-cpu               = "256"
-memory            = "512"
-execution_role_arn = "arn:aws:iam::123456789012:role/ecsTaskExecutionRole"
-task_role_arn      = "arn:aws:iam::123456789012:role/ecsTaskRole"
-container_name    = "t2s-container"
-image_url         = "780593603882.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app"
-image_tag         = "latest"
-container_port    = 3000
-desired_count     = 1
-subnet_ids        = ["subnet-xxxxxxxx", "subnet-yyyyyyyy"]
-security_group_id = "sg-xxxxxxxx"
+region       = "us-east-1"
+cluster_name = "express-cluster"
