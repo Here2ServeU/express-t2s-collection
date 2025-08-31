@@ -1,15 +1,15 @@
-name: CI/CD Pipeline — Build Image & Deploy to EKS via Terraform
+name: CI/CD Pipeline — Build Image & Deploy to EKS
 
-# Trigger on push to main
 #on:
 #  push:
-#    branches:
-#      - main
+    branches:
+      - main
 
 env:
   AWS_REGION: us-east-1
   ECR_REPO_NAME: express-t2s-app
   ECR_IMAGE_TAG: latest
+  CLUSTER_NAME: ascode-cluster
 
 jobs:
   build-and-deploy:
@@ -39,40 +39,20 @@ jobs:
         run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO_NAME:$ECR_IMAGE_TAG
 
-      - name: 🛠️ Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init (EKS)
-        working-directory: terraform/eks
-        run: terraform init
-
-      - name: Terraform Plan
-        working-directory: terraform/eks
-        run: terraform plan -var="image_url=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ env.ECR_IMAGE_TAG }}"
-
-      - name: Terraform Apply (Deploy EKS Infra)
-        working-directory: terraform/eks
-        run: terraform apply -auto-approve -var="image_url=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ env.ECR_IMAGE_TAG }}"
-
-      - name: Configure kubectl for EKS access
+      - name: Update kubeconfig for EKS
         run: |
-          aws eks update-kubeconfig \
-            --region $AWS_REGION \
-            --name t2s-eks-cluster
+          aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME
 
-      - name: Set image URI env variable
-        run: echo "IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/$ECR_REPO_NAME:$ECR_IMAGE_TAG" >> $GITHUB_ENV
-
-      - name: Replace image in deployment.yaml
+      - name: Set image in deployment.yaml
         run: |
-          sed -i "s|REPLACE_IMAGE|${IMAGE_URI}|g" k8s/deployment.yaml
+          sed -i "s|<ECR_IMAGE_URI>|${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:${{ env.ECR_IMAGE_TAG }}|g" k8s/deployment.yaml
 
-      - name: Apply Kubernetes Manifests
+      - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
 
-      - name: Verify Deployment Status
+      - name: Verify deployment
         run: |
-          kubectl rollout status deployment/t2s-express-deployment
-          kubectl get svc t2s-express-service
+          kubectl rollout status deployment/express-app
+          kubectl get svc express-app-service

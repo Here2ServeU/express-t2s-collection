@@ -114,11 +114,90 @@ http://a12345678901234567890.elb.us-east-1.amazonaws.com
 You now have a fully running Express.js app deployed on a secure and scalable EKS cluster using Terraform and AWS best practices.
 
 
-
 ---
 
 ## Bonus Tips
-- Add Helm for packages management on the EKS Cluster
+
 - Use [Kubecost](https://www.kubecost.com/) to monitor EKS cost
 - Use [Trivy](https://aquasecurity.github.io/trivy/) to scan your image
-- Add a `HorizontalPodAutoscaler` for scaling
+- Add a `HorizontalPodAutoscaler` for scaling---
+
+## 7. Automate with GitHub Actions
+
+You can use GitHub Actions to build, tag, and push your Docker image to ECR, and optionally deploy to EKS.
+
+### Create `.github/workflows/deploy.yml` in your repo:
+
+```yaml
+name: Build and Deploy to ECR
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: express-app
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image to ECR
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/YOUR_GITHUB_ROLE
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./app
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+
+  deploy:
+    name: Deploy to EKS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/YOUR_GITHUB_ROLE
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region $AWS_REGION --name ascode-cluster
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/express-app express=${{ env.IMAGE }}
+```
+
+---
+
+### Setup Steps
+
+1. Replace `YOUR_AWS_ACCOUNT_ID` and `YOUR_GITHUB_ROLE` with your actual values
+2. Create an OIDC IAM Role in AWS and allow GitHub to assume it
+3. Push code to the `main` branch and watch it deploy!
+
+---
