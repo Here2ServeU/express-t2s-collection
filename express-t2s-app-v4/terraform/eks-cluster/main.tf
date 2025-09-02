@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.8"
@@ -10,14 +12,27 @@ module "eks" {
 
   enable_irsa = true
 
-  # Public + private endpoints, and restrict who can hit the public one
+  # API endpoint exposure
   cluster_endpoint_public_access       = true
   cluster_endpoint_private_access      = true
   cluster_endpoint_public_access_cidrs = var.admin_ip != "" ? ["${var.admin_ip}/32"] : ["0.0.0.0/32"]
-  
-  # (recommended) give the cluster creator admin in aws-auth
-  enable_cluster_creator_admin_permissions = true
-  
+
+  # ---- Option B: manage aws-auth via Terraform ----
+  manage_aws_auth = true
+
+  # Grant the *Terraform caller* cluster-admin
+  aws_auth_users = concat([
+    {
+      userarn  = data.aws_caller_identity.current.arn
+      username = "admin"
+      groups   = ["system:masters"]
+    }
+  ], var.aws_auth_users)
+
+  # Optionally map additional roles (least-privilege for teams)
+  aws_auth_roles = var.aws_auth_roles
+
+  # Node groups
   eks_managed_node_group_defaults = {
     ami_type       = "AL2023_x86_64_STANDARD"
     instance_types = ["t3.medium"]
