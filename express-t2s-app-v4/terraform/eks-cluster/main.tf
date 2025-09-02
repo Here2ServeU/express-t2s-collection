@@ -1,45 +1,36 @@
-provider "aws" {
-  region = var.region
-}
-
-module "vpc" {
-  source = "../modules/vpc"
-
-  name             = var.name
-  region           = var.region
-  vpc_cidr         = var.vpc_cidr
-  azs              = var.azs
-  public_subnets   = var.public_subnets
-  private_subnets  = var.private_subnets
-  intra_subnets    = var.intra_subnets
-  tags             = var.tags
-}
-
-module "iam" {
-  source = "../modules/iam"
-  cluster_name = var.name
-}
-
-module "security_groups" {
-  source = "../modules/security_groups"
-  vpc_id = module.vpc.vpc_id
-}
-
-module "alb" {
-  source = "../modules/alb"
-  vpc_id = module.vpc.vpc_id
-  public_subnets = module.vpc.public_subnets
-}
-
 module "eks" {
-  source = "../modules/eks"
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.8"
 
-  cluster_name = var.name
-  region       = var.region
-  vpc_id       = module.vpc.vpc_id
-  subnet_ids   = module.vpc.private_subnets
-  control_plane_subnet_ids = module.vpc.intra_subnets
-  node_group_instance_types = ["t3.large"]
-  node_group_capacity_type  = "SPOT"
+  cluster_name    = var.cluster_name
+  cluster_version = var.kubernetes_version
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  enable_irsa = true
+
+  # Public + private endpoints, and restrict who can hit the public one
+  cluster_endpoint_public_access       = true
+  cluster_endpoint_private_access      = true
+  cluster_endpoint_public_access_cidrs = var.admin_ip != "" ? ["${var.admin_ip}/32"] : ["0.0.0.0/32"]
+  
+  # (recommended) give the cluster creator admin in aws-auth
+  enable_cluster_creator_admin_permissions = true
+  
+  eks_managed_node_group_defaults = {
+    ami_type       = "AL2023_x86_64_STANDARD"
+    instance_types = ["t3.medium"]
+  }
+
+  eks_managed_node_groups = {
+    node_group = {
+      desired_size  = 2
+      min_size      = 1
+      max_size      = 3
+      capacity_type = "SPOT"
+    }
+  }
+
   tags = var.tags
 }
