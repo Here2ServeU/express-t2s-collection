@@ -1,36 +1,72 @@
-#!/bin/bash
+#!/usr/bin/env sh
+set -eu
 
-set -e
+# -------- Config (override via env or args) --------
+AWS_REGION="${AWS_REGION:-us-east-1}"
+REPO_NAME="${REPO_NAME:-t2s-express-app}"
+APP_DIR="${APP_DIR:-$(cd "$(dirname "$0")"/../../app && pwd)}"
+PLATFORMS="${PLATFORMS:-linux/amd64}"  # change to "linux/amd64,linux/arm64" for multi-arch
+TAG="${TAG:-$(date +%Y%m%d%H%M%S)}"
 
-# Set working directories
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="${SCRIPT_DIR}/../../app"
-AWS_REGION="us-east-1"
-REPO_NAME="t2s-express-app"
-IMAGE_TAG="latest"
+# Optional positional args: REGION REPO_NAME TAG
+if [ "${1:-}" != "" ]; then AWS_REGION="$1"; fi
+if [ "${2:-}" != "" ]; then REPO_NAME="$2"; fi
+if [ "${3:-}" != "" ]; then TAG="$3"; fi
 
-# Validate app directory exists
+# -------- Checks --------
 if [ ! -d "$APP_DIR" ]; then
-  echo "Error: Application directory not found at: $APP_DIR"
+  echo "Error: APP_DIR not found: $APP_DIR"
   exit 1
 fi
 
-# Get AWS Account ID
-ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+if ! command -v aws >/dev/null 2>&1; then
+  echo "Error: aws CLI not found."
+  exit 1
+fi
 
-# Compose ECR URI
-ECR_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}"
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Error: docker not found."
+  exit 1
+fi
 
-echo "Logging into AWS ECR..."
-aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_URI"
+# -------- Resolve account and ECR --------
+ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+ECR_DOMAIN="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+ECR_URI="${ECR_DOMAIN}/${REPO_NAME}"
 
-echo "Building Docker image from: $APP_DIR"
-docker build -t "${REPO_NAME}:${IMAGE_TAG}" "$APP_DIR"
+echo "Account:  ${ACCOUNT_ID}"
+echo "Region:   ${AWS_REGION}"
+echo "Repo:     ${ECR_URI}"
+echo "Platform: ${PLATFORMS}"
+echo "Tag:      ${TAG}"
+echo "App dir:  ${APP_DIR}"
 
-echo "Tagging Docker image"
-docker tag "${REPO_NAME}:${IMAGE_TAG}" "${ECR_URI}:${IMAGE_TAG}"
+# -------- Ensure ECR repo --------
+if ! aws ecr describe-repositories --repository-names "$REPO_NAME" --region "$AWS_REGION" >/dev/null 2>&1; then
+  echo "Creating ECR repository: ${REPO_NAME}"
+  aws ecr create-repository --repository-name "$REPO_NAME" --region "$AWS_REGION" >/dev/null
+fi
 
-echo "Pushing image to ECR: ${ECR_URI}:${IMAGE_TAG}"
-docker push "${ECR_URI}:${IMAGE_TAG}"
+# -------- Login to ECR --------
+echo "Logging in to ECR"
+aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_DOMAIN"
 
-echo "Image pushed successfully."
+# -------- Buildx builder --------
+# Safe to ignore error if builder already exists
+docker buildx create --use >/dev/null 2>&1 || true
+
+# -------- Build & Push --------
+echo "Building and pushing image(s)"
+docker buildx build \
+  --platform "$PLATFORMS" \
+  -t "$ECR_URI:$TAG" \
+  -t "$ECR_URI:latest" \
+  --push "$APP_DIR"
+
+echo "Pushed:"
+echo "  $ECR_URI:$TAG"
+echo "  $ECR_URI:latest"
+
+echo "Next:"
+echo "  kubectl -n apps set image deploy/express-t2s app=$ECR_URI:$TAG"
+echo "  kubectl -n apps rollout status deploy/express-t2s"

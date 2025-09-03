@@ -40,6 +40,12 @@ variable "kubernetes_version" {
 variable "tags" {
   type = map(string)
   default = {
-    Project = "express-webapp-v3"
+    Project = "express-webapp-v4"
   }
+}
+
+# Turn on only AFTER the cluster is up
+variable "enable_ingress" {
+  type    = bool
+  default = false
 }

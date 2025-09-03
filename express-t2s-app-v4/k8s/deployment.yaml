@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: "<ECR-ACCOUNT-ID>.dkr.ecr.<REGION>.amazonaws.com/express-t2s:latest" # << replace
+          image: "780593603882.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app:latest" # << replace
           ports:
             - containerPort: 3000
           readinessProbe:
