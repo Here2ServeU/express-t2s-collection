@@ -1,7 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: express-t2s-deployment
+  name: express-t2s
+  namespace: apps
   labels:
     app: express-t2s
 spec:
@@ -15,28 +16,22 @@ spec:
         app: express-t2s
     spec:
       containers:
-        - name: express-t2s
-          image: <aws_account_id>.dkr.ecr.<region>.amazonaws.com/express-t2s-app:latest
+        - name: app
+          image: "<ECR-ACCOUNT-ID>.dkr.ecr.<REGION>.amazonaws.com/express-t2s:latest" # << replace
           ports:
             - containerPort: 3000
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "250m"
-              memory: "256Mi"
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 15
           readinessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 3000
-            initialDelaySeconds: 5
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
             periodSeconds: 10
-      imagePullSecrets:
-        - name: ecr-registry-secret
+          env:
+            - name: NODE_ENV
+              value: "production"
