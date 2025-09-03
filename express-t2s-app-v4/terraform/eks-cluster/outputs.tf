@@ -1,24 +1,14 @@
-output "cluster_id" {
-  description = "EKS cluster ID."
-  value       = module.eks.cluster_id
-}
-
-output "cluster_endpoint" {
-  description = "Endpoint for EKS control plane."
-  value       = module.eks.cluster_endpoint
-}
-
-output "cluster_security_group_id" {
-  description = "Security group ids attached to the cluster control plane."
-  value       = module.eks.cluster_security_group_id
-}
-
 output "region" {
+  value       = var.region
   description = "AWS region"
-  value       = var.aws_region
 }
 
-output "oidc_provider_arn" {
-  value = module.eks.oidc_provider_arn
+output "cluster_name" {
+  value       = module.eks.cluster_name
+  description = "EKS cluster name"
 }
 
+output "ingress_nginx_hostname_hint" {
+  value       = "Run: kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+  description = "Command to get the NGINX LB DNS"
+}
