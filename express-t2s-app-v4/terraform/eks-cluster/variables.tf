@@ -11,8 +11,8 @@ variable "region" {
 }
 
 variable "vpc_cidr" {
-  type        = string
-  default     = "10.145.0.0/16"
+  type    = string
+  default = "10.145.0.0/16"
 }
 
 variable "azs" {

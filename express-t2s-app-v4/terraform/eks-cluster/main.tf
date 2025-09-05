@@ -92,12 +92,12 @@ provider "helm" {
 # NGINX Ingress Controller (optional step 2)
 ############################
 resource "helm_release" "ingress_nginx" {
-  count           = var.enable_ingress ? 1 : 0
-  name            = "ingress-nginx"
-  namespace       = "ingress-nginx"
-  repository      = "https://kubernetes.github.io/ingress-nginx"
-  chart           = "ingress-nginx"
-  version         = "4.11.2"
+  count            = var.enable_ingress ? 1 : 0
+  name             = "ingress-nginx"
+  namespace        = "ingress-nginx"
+  repository       = "https://kubernetes.github.io/ingress-nginx"
+  chart            = "ingress-nginx"
+  version          = "4.11.2"
   create_namespace = true
 
   depends_on = [module.eks] # ensure EKS is ready
