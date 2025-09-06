@@ -35,8 +35,7 @@ scripts/
 **Goal:** Keep Terraform state in S3 and use DynamoDB for state locking.
 
 #### Ensure you configure the following files as desired: 
-- /terraform/ecr/backend.tf
-- /terraform/ecr/variables.tf or terraform.tfvars (if necessary)
+- /terraform/backend/terraform.tfvars
 
 ### A. Create the backend infra
 
@@ -65,6 +64,8 @@ Typical files you’ll have here:
 - /terraform/ecr/variables.tf or terraform.tfvars (if necessary)
 
 ### A. Create the repo
+
+- /terraform/ecr/build_and_push.sh
 
 ```bash
 cd ../ecr
