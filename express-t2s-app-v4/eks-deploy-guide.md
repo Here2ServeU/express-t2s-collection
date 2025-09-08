@@ -1,212 +1,203 @@
-# EKS Cluster Creation with Terraform (Backend → ECR → EKS)
+# EKS Deploy Guide for Express App (Complete Beginner)
 
-This short guide covers **only infrastructure creation** for your future Express Web App.  
-You will:
-
-1) Create a **remote Terraform backend** (S3 + DynamoDB)  
-2) Create an **ECR private repository** and push your image  
-3) Create an **EKS cluster** (networking, security, and cluster)  
-
-No app is deployed yet—we’ll do that in the next version. At the end, you’ll also clean up to avoid costs.
+This guide walks you through deploying a Dockerized Express.js app to Amazon EKS using Terraform and AWS CLI.
 
 ---
 
 ## Prerequisites
 
-- AWS CLI configured (`aws configure`) and an IAM identity with permissions for S3, DynamoDB, ECR, EC2, IAM, and EKS.
-- Terraform v1.5+  
+- AWS CLI configured (`aws configure`)
 - Docker installed
+- Terraform installed
+- kubectl installed
+- IAM user/role with access to S3, ECR, EC2, IAM, VPC, and EKS
 
-Suggested repo layout:
+---
 
-```
-terraform/
-  backend/        # S3 state bucket + DynamoDB lock table
-  ecr/            # ECR repository for app image
-  eks-cluster/    # VPC + EKS + node group
-scripts/
-  build_and_push.sh
+## 1. Set Up Terraform Remote State
+
+In `eks-cluster/backend.tf`, you’ll find the S3 backend configuration. Make sure the S3 bucket exists:
+
+```bash
+aws s3 mb s3://t2s-terraform-states --region us-east-1
 ```
 
 ---
 
-## 1) Remote Backend (S3 + DynamoDB)
-
-**Goal:** Keep Terraform state in S3 and use DynamoDB for state locking.
-
-#### Ensure you configure the following files as desired: 
-- /terraform/backend/terraform.tfvars
-
-### A. Create the backend infra
+## 2. Deploy EKS Cluster
 
 ```bash
-cd terraform/backend
+cd eks-cluster
 terraform init
-terraform apply -auto-approve
+terraform apply -var-file="terraform.tfvars"
 ```
 
-Typical files you’ll have here:
-
-- `main.tf` – creates S3 bucket and DynamoDB table (e.g., `t2s-terraform-states`, `tf-locks`)
-- `outputs.tf` – prints bucket and table names (optional)
-- `variables.tf` / `terraform.tfvars` – names, region, tags
-
-> After this exists, other Terraform folders (like `ecr/` and `eks-cluster/`) can point their `backend.tf` to **this** S3 bucket + DynamoDB table.
+This provisions:
+- VPC, Subnets
+- Security Groups, IAM
+- ALB infrastructure
+- EKS cluster with managed node group
 
 ---
 
-## 2) ECR Private Repository (and push your image)
-
-**Goal:** Create the private ECR repo and push one image tag (usually `latest`) that the cluster will use later.
-
-#### Ensure you configure the following files as desired: 
-- /terraform/ecr/backend.tf
-- /terraform/ecr/variables.tf or terraform.tfvars (if necessary)
-
-### A. Create the repo
-
-- /terraform/ecr/build_and_push.sh
+## 3. Configure `kubectl` Access to the Cluster
 
 ```bash
-cd ../ecr
-terraform init
-terraform apply -auto-approve
+aws eks --region us-east-1 update-kubeconfig --name ascode-cluster
+kubectl get nodes
 ```
 
-Typical files you’ll have here:
+You should see EKS nodes ready.
 
-- `backend.tf` – points to the S3/DynamoDB you created in step 1  
-- `main.tf` – creates the ECR repository (e.g., `t2s-express-app`) and optional lifecycle policy  
-- `variables.tf` / `terraform.tfvars` – region, repo name, tags
+---
 
-### B. Build and push your image (single tag)
+## 4. Build and Push the Express App to ECR
 
-From repo root (or `scripts/`):
+### Step 1: Create ECR repository (only once)
+```bash
+aws ecr create-repository --repository-name express-app
+```
+
+### Step 2: Run the push script
+```bash
+cd scripts
+chmod +x push_to_ecr.sh
+./push_to_ecr.sh express-app
+```
+
+> 📝 This builds the Docker image and pushes it to your AWS ECR registry.
+
+---
+
+## 5. Deploy App to EKS
+
+### Step 1: Replace `<ECR_IMAGE_URI>` in `k8s/deployment.yaml` with your actual image URI:
+```bash
+# Example
+123456789012.dkr.ecr.us-east-1.amazonaws.com/express-app:latest
+```
+
+### Step 2: Apply the Kubernetes manifests
+```bash
+cd k8s
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+```
+
+---
+
+## 6. Access Your App via LoadBalancer
+
+### Get the ALB DNS:
 
 ```bash
-cd ../../scripts
-chmod +x build_and_push.sh
-# Usage: ./build_and_push.sh [REGION] [REPO_NAME] [TAG]
-./build_and_push.sh us-east-1 t2s-express-app latest
+kubectl get svc express-app-service
 ```
 
-What the script does:
-
-- Ensures the ECR repo exists (if not already)
-- Logs in to ECR
-- Builds for `linux/amd64` (default) from `app/`
-- Pushes **one** tag (for example `latest`) to ECR
-
-> Keep the image architecture matched to your future nodes (for t3.* nodes, use `linux/amd64`).
-
----
-
-## 3) EKS Cluster (Networking, Security, Cluster)
-
-**Goal:** Provision a production-ready EKS cluster. We won’t deploy the app yet.
-
-#### Ensure you configure the following files as desired: 
-- /terraform/ecr/backend.tf
-- /terraform/ecr/variables.tf or terraform.tfvars (if necessary)
+Look for the `EXTERNAL-IP` or `LoadBalancer Ingress`:
 
 ```bash
-cd ../terraform/eks-cluster
-terraform init
-terraform apply -auto-approve
+NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP                                                              PORT(S)
+express-app-service    LoadBalancer   10.100.163.132   a12345678901234567890.elb.us-east-1.amazonaws.com   80:31823/TCP
 ```
 
-What this Terraform does:
-
-- **VPC & Subnets**: public/private subnets, NAT/IGW, routes  
-- **IAM**: roles for EKS control plane and nodes; OIDC for IRSA  
-- **EKS**: control plane (public+private endpoint as configured)  
-- **Managed Node Group**: capacity settings (Spot or On-Demand), instance types, scaling
-
-Notes:
-
-- If you restrict the cluster public endpoint by CIDR, include your workstation’s IP (`admin_ip`) in variables, otherwise `kubectl` won’t reach the API later.
-- Spot capacity may occasionally fail with `UnfulfillableCapacity`. If that happens, switch to `ON_DEMAND` or broaden `instance_types`.
-
-We **do not** test connectivity yet because the application isn’t deployed in this version.
-
----
-
-## Clean Up (to save money)
-
-When you’re done, destroy in **reverse order**:
-
-### 1) Destroy EKS cluster
+### Open in your browser:
 
 ```bash
-cd terraform/eks-cluster
-terraform destroy -auto-approve
-```
-
-Wait until all cluster resources (including load balancers, ENIs) are deleted.
-
-### 2) Destroy ECR repository
-
-```bash
-cd ../ecr
-# If the repo is not empty, empty or set "force_delete" in TF
-terraform destroy -auto-approve
-```
-
-### 3) Destroy Backend (S3 + DynamoDB)
-
-First **empty the S3 bucket** (required), then destroy:
-
-```bash
-aws s3 rm s3://<your-backend-bucket> --recursive
-cd ../backend
-terraform destroy -auto-approve
+http://a12345678901234567890.elb.us-east-1.amazonaws.com
 ```
 
 ---
 
-## Summary
+## Success!
 
-- You created production-ready infrastructure for your future Express Web Application: **remote backend**, **ECR**, and an **EKS cluster**.
-- You did **not** deploy the app yet—that will be the next version.
-- You cleaned up the environment to avoid costs.
+You now have a fully running Express.js app deployed on a secure and scalable EKS cluster using Terraform and AWS best practices.
 
-Next version: deploy the Express Web App to EKS, expose it to users over the internet, and add Helm for package management.
-
-God bless you!
 
 ---
 
-## Author
+## Bonus Tips
 
-By Emmanuel Naweji, 2025  
-**Cloud | DevOps | SRE | FinOps | AI Engineer**  
-Helping businesses modernize infrastructure and guiding engineers into top 1% career paths through real-world projects and automation-first thinking.
+- Use [Kubecost](https://www.kubecost.com/) to monitor EKS cost
+- Use [Trivy](https://aquasecurity.github.io/trivy/) to scan your image
+- Add a `HorizontalPodAutoscaler` for scaling---
 
-![AWS Certified](https://img.shields.io/badge/AWS-Certified-blue?logo=amazonaws)
-![Azure Solutions Architect](https://img.shields.io/badge/Azure-Solutions%20Architect-0078D4?logo=microsoftazure)
-![CKA](https://img.shields.io/badge/Kubernetes-CKA-blue?logo=kubernetes)
-![Terraform](https://img.shields.io/badge/IaC-Terraform-623CE4?logo=terraform)
-![GitHub Actions](https://img.shields.io/badge/CI/CD-GitHub%20Actions-blue?logo=githubactions)
-![GitLab CI](https://img.shields.io/badge/CI/CD-GitLab%20CI-FC6D26?logo=gitlab)
-![Jenkins](https://img.shields.io/badge/CI/CD-Jenkins-D24939?logo=jenkins)
-![Ansible](https://img.shields.io/badge/Automation-Ansible-red?logo=ansible)
-![ArgoCD](https://img.shields.io/badge/GitOps-ArgoCD-orange?logo=argo)
-![VMware](https://img.shields.io/badge/Virtualization-VMware-607078?logo=vmware)
-![Linux](https://img.shields.io/badge/OS-Linux-black?logo=linux)
-![FinOps](https://img.shields.io/badge/FinOps-Cost%20Optimization-green?logo=money)
-![OpenAI](https://img.shields.io/badge/AI-OpenAI-ff9900?logo=openai)
+## 7. Automate with GitHub Actions
+
+You can use GitHub Actions to build, tag, and push your Docker image to ECR, and optionally deploy to EKS.
+
+### Create `.github/workflows/deploy.yml` in your repo:
+
+```yaml
+name: Build and Deploy to ECR
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: express-app
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image to ECR
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/YOUR_GITHUB_ROLE
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./app
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+
+  deploy:
+    name: Deploy to EKS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/YOUR_GITHUB_ROLE
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region $AWS_REGION --name ascode-cluster
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/express-app express=${{ env.IMAGE }}
+```
 
 ---
 
-## Connect with Me
+### Setup Steps
 
-- [LinkedIn](https://www.linkedin.com/in/ready2assist/)
-- [GitHub](https://github.com/Here2ServeU)
-- [Medium](https://medium.com/@here2serveyou)
+1. Replace `YOUR_AWS_ACCOUNT_ID` and `YOUR_GITHUB_ROLE` with your actual values
+2. Create an OIDC IAM Role in AWS and allow GitHub to assume it
+3. Push code to the `main` branch and watch it deploy!
 
 ---
-
-## Book a Free Consultation
-
-Let’s talk about modernizing your cloud infrastructure or DevOps strategy.  
-👉🏾 [Schedule a free 1:1 consultation](https://bit.ly/letus-meet)
