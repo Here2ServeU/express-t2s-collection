@@ -1,4 +1,4 @@
-# guide.md — Getting Started with express-t2s-app-v1
+Getting Started with express-t2s-app-v1
 
 Welcome to `express-t2s-app-v1`, the foundation of your journey toward building a cloud-native, DevOps-ready application using Node.js and Express.
 
