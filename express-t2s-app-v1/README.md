@@ -1,6 +1,6 @@
-Getting Started with express-t2s-app-v1
+# Getting Started with express-t2s-app-v1
 
-Welcome to `express-t2s-app-v1`, the foundation of your journey toward building a cloud-native, DevOps-ready application using Node.js and Express.
+Welcome to `*express-t2s-app-v1*`, the foundation of your journey toward building a cloud-native, DevOps-ready application using Node.js and Express.
 
 This version sets up a simple web server and introduces you to key concepts like HTTP, Express routing, and serving HTML pages.
 
