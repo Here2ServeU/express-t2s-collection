@@ -94,6 +94,6 @@ Helping businesses modernize infrastructure and guiding engineers into top 1% ca
 ---
 
 ## Book a Free Consultation
-
-Let’s talk about modernizing your cloud infrastructure or DevOps strategy.  
+- If you want me to help you with DevOps/Cloud/AI skills. 
+- If you want me to help modernize your cloud infrastructure, DevOps, or AI strategy.  
 👉🏾 [Schedule a free 1:1 consultation](https://bit.ly/letus-meet)
