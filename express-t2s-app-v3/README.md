@@ -1,4 +1,4 @@
-# Express T2S App – version 3: Full DevOps Guide (Beginner Friendly)
+# Express T2S App – Full DevOps Guide (Beginner Friendly)
 
 This project walks you through building and deploying a containerized Node.js Express application to AWS using real-world DevOps tools and best practices.
 
@@ -21,10 +21,10 @@ express-t2s-app/
   - index.js                     → Entry point (sample Express app)
 
 - scripts/                       → Bash and Python automation scripts
-  - push_ecr.sh                  → Push Docker image to ECR (Bash)
-  - push_ecr.py                  → Push Docker image to ECR (Python)
-  - deploy_ecs.sh                → Deploy Docker image to ECS (Bash)
-  - deploy_ecs.py                → Deploy Docker image to ECS (Python)
+  - push_to_ecr.sh               → Push Docker image to ECR (Bash)
+  - deploy_to_ecs.sh             → Deploy Docker image to ECS (Bash)
+  - push_and_deploy.sh           → Automates both Push & Deploy (Bash)
+  - deploy_to_ecr_and_ecs.py     → Automates both Push & Deploy (Python)
 
 - terraform/                     → Infrastructure-as-code using Terraform
   - main.tf                      → Defines Network, ALB, ECS cluster/service/task
@@ -35,7 +35,7 @@ express-t2s-app/
 
 ---
 
-## Infrastructure Deep Dive (New!)
+## Infrastructure Deep Dive
 
 This project deploys a production-ready architecture. Here is how the components work together:
 
@@ -86,119 +86,68 @@ terraform {
 }
 ````
 
-  - This configuration sets up a remote backend so the Terraform state file is securely stored in an S3 bucket.
+*Note: Update the bucket name to one you have created in S3.*
 
-#### Step 2. Initialize Terraform
+#### Step 2. Initialize & Apply Terraform
 
 ```bash
 cd terraform
 terraform init
-```
-
-  - Initializes the working directory and configures the remote backend.
-
-#### Step 3. Preview Infrastructure Plan
-
-```bash
 terraform plan
-```
-
-  - Allows you to review changes before applying.
-
-#### Step 4. Apply the Changes
-
-```bash
 terraform apply
 ```
 
-  - Provisions the entire infrastructure (VPC, ALB, ECS cluster, task definitions, etc.)
+*Tip: After applying, copy the `alb_hostname` from the outputs. This is the URL you will visit to see your app\!*
 
 -----
 
-## Bash Script to Push Docker Image to ECR (scripts/push\_ecr.sh)
+## 2\. Build & Deploy (Automation Scripts)
+
+We have provided both Bash and Python scripts to automate the process.
+
+### Option A: Bash Scripts
+
+**1. Push Image to ECR Only**
 
 ```bash
-#!/bin/bash
-REPO_NAME=t2s-express-app                          # ECR repository name
-REGION=us-east-1                                   # AWS region
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text) # AWS account ID
-IMAGE_TAG=latest                                   # Docker image tag
-
-# Log in to ECR using AWS CLI
-aws ecr get-login-password --region $REGION | \
-docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
-
-# Create the repository if it doesn't exist
-aws ecr describe-repositories --repository-names $REPO_NAME --region $REGION > /dev/null 2>&1 || \
-aws ecr create-repository --repository-name $REPO_NAME --region $REGION
-
-# Build, tag, and push Docker image to ECR
-docker build -t $REPO_NAME ../app
-docker tag $REPO_NAME:$IMAGE_TAG $ACCOUNT_ID.dkr.ecr.$[REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG](https://REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG)
-docker push $ACCOUNT_ID.dkr.ecr.$[REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG](https://REGION.amazonaws.com/$REPO_NAME:$IMAGE_TAG)
+cd scripts
+bash push_to_ecr.sh
 ```
 
------
+*Builds the Docker image and pushes it to your ECR repository.*
 
-## Python Script to Push Docker Image to ECR (scripts/push\_ecr.py)
-
-```python
-import boto3, subprocess
-
-repo_name = "t2s-express-app"   # ECR repo name
-region = "us-east-1"            # AWS region
-image_tag = "latest"            # Image tag
-
-ecr = boto3.client("ecr", region_name=region)
-sts = boto3.client("sts")
-account_id = sts.get_caller_identity()["Account"]
-repo_uri = f"{account_id}.dkr.ecr.{region}[.amazonaws.com/](https://.amazonaws.com/){repo_name}"
-
-# Check or create ECR repo
-try:
-    ecr.describe_repositories(repositoryNames=[repo_name])
-except ecr.exceptions.RepositoryNotFoundException:
-    ecr.create_repository(repositoryName=repo_name)
-
-# Docker login, build, tag, and push
-subprocess.run(f"aws ecr get-login-password --region {region} | docker login --username AWS --password-stdin {repo_uri}", shell=True)
-subprocess.run(f"docker build -t {repo_name} ../app", shell=True)
-subprocess.run(f"docker tag {repo_name}:{image_tag} {repo_uri}:{image_tag}", shell=True)
-subprocess.run(f"docker push {repo_uri}:{image_tag}", shell=True)
-```
-
------
-
-## Bash Script to Deploy Image to ECS (scripts/deploy\_ecs.sh)
+**2. Deploy to ECS Only**
 
 ```bash
-#!/bin/bash
-CLUSTER_NAME=t2s-ecs-cluster       # ECS cluster name
-SERVICE_NAME=t2s-ecs-service       # ECS service name
-
-# Redeploy service with latest image
-aws ecs update-service \
-  --cluster $CLUSTER_NAME \
-  --service $SERVICE_NAME \
-  --force-new-deployment
+cd scripts
+bash deploy_to_ecs.sh
 ```
+
+*Forces the ECS Service to update and pull the latest image.*
+
+**3. Full Push & Deploy (Recommended)**
+
+```bash
+cd scripts
+bash push_and_deploy.sh
+```
+
+*Runs the entire workflow: Build -\> Push -\> Deploy.*
 
 -----
 
-## Python Script to Deploy Image to ECS (scripts/deploy\_ecs.py)
+### Option B: Python Scripts
 
-```python
-import boto3
+If you prefer Python, use the all-in-one automation script:
 
-client = boto3.client('ecs')
+**Full Push & Deploy**
 
-# Redeploy service with latest image
-client.update_service(
-    cluster='t2s-ecs-cluster',
-    service='t2s-ecs-service',
-    forceNewDeployment=True
-)
+```bash
+cd scripts
+python3 deploy_to_ecr_and_ecs.py
 ```
+
+*Uses Boto3 to authenticate, build Docker image, push to ECR, and update the ECS service.*
 
 -----
 
@@ -207,33 +156,8 @@ client.update_service(
   - `main.tf`: The core file. Defines the **VPC, ALB, Security Groups**, ECS cluster, service, task definition, and IAM roles.
   - `variables.tf`: Defines reusable input variables (Region, App Name, CPU/Memory).
   - `terraform.tfvars`: **Source of Truth**. Contains the actual values (e.g., port 3000, 256 CPU) for your specific deployment.
-  - `outputs.tf`: Displays useful output like the **Load Balancer URL (to access your app)** and ECR repo URI.
+  - `outputs.tf`: Displays useful output like the **Load Balancer URL** and ECR repo URI.
   - `backend.tf`: Defines remote S3 backend for storing Terraform state.
-
------
-
-## How to Run
-
-```bash
-# Terraform infra
-cd terraform
-terraform init
-terraform apply
-# COPY THE ALB_HOSTNAME output! Paste it in your browser to see your app.
-
-# Push Docker image (option 1)
-cd scripts
-bash push_ecr.sh
-
-# Push Docker image (option 2)
-python3 push_ecr.py
-
-# Deploy to ECS (option 1)
-bash deploy_ecs.sh
-
-# Deploy to ECS (option 2)
-python3 deploy_ecs.py
-```
 
 -----
 
@@ -243,4 +167,3 @@ python3 deploy_ecs.py
 GitHub: [Here2ServeU](https://github.com/Here2ServeU)
 LinkedIn: [emmanuelnaweji](https://www.linkedin.com/in/ready2assist/)
 Medium: [@here2serveyou](https://medium.com/@here2serveyou)  
-Book a Free 30-Minute Consultation: [naweji.setmore.com](https://here4you.setmore.com/emmanuel)
