@@ -1,0 +1,18 @@
+{
+  "family": "t2s-task-family",
+  "containerDefinitions": [
+    {
+      "name": "t2s-express-app",
+      "image": "730335276920.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app:latest",
+      "memory": 512,
+      "cpu": 256,
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "hostPort": 3000
+        }
+      ]
+    }
+  ]
+}
