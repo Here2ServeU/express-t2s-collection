@@ -9,10 +9,6 @@ APP_DIR="${APP_DIR:-$(cd "$(dirname "$0")"/../../app && pwd)}"
 PLATFORM="${PLATFORM:-linux/amd64}"   # Required for Fargate compatibility
 TAG="latest"                          # Standard tag for ECS pull
 
-# ECS Cluster and Service names from your ecs/main.tf
-CLUSTER_NAME="express-t2s-app-cluster"
-SERVICE_NAME="express-t2s-app-service"
-
 # Optional positional args: REGION REPO_NAME
 [ "${1:-}" ] && AWS_REGION="$1"
 [ "${2:-}" ] && REPO_NAME="$2"
