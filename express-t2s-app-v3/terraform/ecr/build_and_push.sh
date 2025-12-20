@@ -2,11 +2,16 @@
 set -eu
 
 # -------- Config (env or args) --------
+# Matches REPO_NAME from your ecr/terraform.tfvars
 AWS_REGION="${AWS_REGION:-us-east-1}"
-REPO_NAME="${REPO_NAME:-t2s-express-app}"
+REPO_NAME="${REPO_NAME:-express-t2s-app-repo}"
 APP_DIR="${APP_DIR:-$(cd "$(dirname "$0")"/../../app && pwd)}"
-PLATFORM="${PLATFORM:-linux/amd64}"   # single platform only
-TAG="latest"                          # always latest
+PLATFORM="${PLATFORM:-linux/amd64}"   # Required for Fargate compatibility
+TAG="latest"                          # Standard tag for ECS pull
+
+# ECS Cluster and Service names from your ecs/main.tf
+CLUSTER_NAME="express-t2s-app-cluster"
+SERVICE_NAME="express-t2s-app-service"
 
 # Optional positional args: REGION REPO_NAME
 [ "${1:-}" ] && AWS_REGION="$1"
@@ -29,18 +34,19 @@ echo "Platform: $PLATFORM"
 echo "Tag:      $TAG"
 echo "App dir:  $APP_DIR"
 
-# -------- Ensure repo --------
+# -------- Ensure repo exists --------
 if ! aws ecr describe-repositories --repository-names "$REPO_NAME" --region "$AWS_REGION" >/dev/null 2>&1; then
   echo "Creating ECR repository: ${REPO_NAME}"
   aws ecr create-repository --repository-name "$REPO_NAME" --region "$AWS_REGION" >/dev/null
 fi
 
-# -------- Login --------
-echo "Logging in to ECR"
+# -------- Login to ECR --------
+echo "Logging in to ECR..."
 aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_DOMAIN"
 
-# -------- Build & push --------
+# -------- Build & push image --------
 echo "Building and pushing $ECR_URI:$TAG"
+# Ensure buildx is ready for the specified platform
 docker buildx create --use >/dev/null 2>&1 || true
 docker buildx build \
   --platform "$PLATFORM" \
@@ -49,8 +55,3 @@ docker buildx build \
 
 echo "Pushed: $ECR_URI:$TAG"
 
-# -------- Tips --------
-echo
-echo "Next steps:"
-echo "  kubectl -n apps set image deploy/express-t2s app=$ECR_URI:$TAG"
-echo "  kubectl -n apps rollout status deploy/express-t2s"

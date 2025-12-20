@@ -1,9 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "emmanuel-tf-state-12132025"      # Your S3 bucket name
-    key            = "ecr/terraform.tfstate"  # For ECS state file (change to eks/... for EKS)
+    bucket         = "express-t2s-app-terraform-state"
+    key            = "ecr/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "terraform-locks"        # Your DynamoDB lock table
+    dynamodb_table = "express-t2s-app-state-lock"
     encrypt        = true
   }
 }

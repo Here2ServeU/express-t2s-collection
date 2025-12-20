@@ -1,4 +1,4 @@
-bucket_name   = "emmanuel-tf-state-12132025"
-lock_table    = "terraform-locks"
-aws_region    = "us-east-1"
-environment   = "dev"
+bucket_name = "express-t2s-app-terraform-state"
+lock_table  = "express-t2s-app-state-lock"
+aws_region  = "us-east-1"
+environment = "dev"

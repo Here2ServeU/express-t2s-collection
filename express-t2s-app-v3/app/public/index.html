@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emmanuel Services - Cloud & DevOps</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-blue: #0a74da;
+      --hover-blue: #085cb1;
+      --bg-light: #f4f7f6;
+      --card-bg: #ffffff;
+      --text-main: #333;
+      --transition: all 0.3s ease;
+    }
+
+    body.dark-mode {
+      --bg-light: #1a1a1a;
+      --card-bg: #2d2d2d;
+      --text-main: #f4f4f4;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-light);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      transition: var(--transition);
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary-blue), #004a99);
+      color: white;
+      padding: 4rem 1.5rem 3rem;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .social-links {
+      margin-top: 1.5rem;
+    }
+
+    .social-links a {
+      color: white;
+      font-size: 1.5rem;
+      margin: 0 15px;
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .social-links a:hover {
+      color: #ffcc00;
+      transform: scale(1.2);
+    }
+
+    main {
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .services {
+      background-color: var(--card-bg);
+      margin: 1rem auto;
+      padding: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      max-width: 700px;
+      width: 100%;
+      transition: var(--transition);
+    }
+
+    .services:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      padding: 12px;
+      margin-bottom: 8px;
+      background: rgba(10, 116, 218, 0.05);
+      border-left: 4px solid var(--primary-blue);
+      border-radius: 4px;
+    }
+
+    /* Website CTA Button */
+    .btn-website {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 12px 30px;
+      background-color: var(--primary-blue);
+      color: white;
+      text-decoration: none;
+      border-radius: 50px;
+      font-weight: bold;
+      transition: var(--transition);
+    }
+
+    .btn-website:hover {
+      background-color: var(--hover-blue);
+      box-shadow: 0 5px 15px rgba(10, 116, 218, 0.4);
+    }
+
+    #theme-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 50px;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      font-weight: bold;
+      z-index: 1000;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding: 2rem;
+      text-align: center;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="theme-btn">🌙 Dark Mode</button>
+
+  <header>
+    <h1>Welcome to Emmanuel Services</h1>
+    <p>Empowering Cloud & DevOps Engineers Worldwide</p>
+    
+    <div class="social-links">
+      <a href="https://linkedin.com/in/ready2assist" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+      <a href="https://github.com/Here2ServeU" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+    </div>
+  </header>
+
+  <main>
+    <section class="services">
+      <h2>Our Core Expertise</h2>
+      <ul>
+        <li>DevOps Training & Certification Support</li>
+        <li>Cloud Architecture (AWS, Azure, GCP)</li>
+        <li>CI/CD Automation & GitHub Integration</li>
+        <li>Infrastructure as Code (Terraform, Ansible)</li>
+        <li>DevSecOps & FinOps Implementation</li>
+        <li>AI and Machine Learning</li>
+      </ul>
+    </section>
+
+    <a href="https://www.emmanuelnaweji.com/" class="btn-website" target="_blank">Visit Official Website</a>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Emmanuel Services. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const themeBtn = document.getElementById('theme-btn');
+    const body = document.body;
+
+    themeBtn.addEventListener('click', () => {
+      body.classList.toggle('dark-mode');
+      themeBtn.innerText = body.classList.contains('dark-mode') ? '☀️ Light Mode' : '🌙 Dark Mode';
+    });
+  </script>
+</body>
+</html>
