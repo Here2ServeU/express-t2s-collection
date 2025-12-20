@@ -35,7 +35,7 @@ This project provides a comprehensive, hands-on walkthrough for building, contai
 A core pillar of DevOps is ensuring that **secrets are never pushed to GitHub repositories**.
 
 * **`.tfvars` files**: These local files contain sensitive environment-specific data (like DB passwords or AWS keys) and must remain local.
-* **`.gitignore` Management**: Always ensure your [`.gitignore`](https://www.google.com/search?q=%5Bhttps://github.com/Here2ServeU/express-t2s-app-v3/blob/main/.gitignore%5D(https://github.com/Here2ServeU/express-t2s-app-v3/blob/main/.gitignore)) file explicitly includes `*.tfvars` to prevent accidental exposure.
+* **`.gitignore` Management**: Always ensure your [`.gitignore`](.gitignore)) file explicitly includes `*.tfvars` to prevent accidental exposure.
 * **Secrets Management**: For production-grade security, use **AWS Secrets Manager** to inject credentials into your containers at runtime instead of hardcoding them.
 
 ---
