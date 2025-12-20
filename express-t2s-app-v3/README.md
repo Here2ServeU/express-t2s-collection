@@ -56,7 +56,7 @@ Before managing main resources, we must set up the **Terraform Backend** (S3 and
 Next, we create the secure storage for our application image.
 
 1. Navigate to `terraform/ecr` and run `terraform apply`.
-2. Run your local **[build and push script](https://github.com/Here2ServeU/express-t2s-app-v3/tree/main/scripts)** to build your [Docker image](https://www.google.com/search?q=https://github.com/Here2ServeU/express-t2s-app-v3/blob/main/app/Dockerfile) and upload it to the new repository.
+2. Run your local **[build and push script](https://github.com/Here2ServeU/express-t2s-app-v3/tree/main/scripts)** to build your [Docker image](app/Dockerfile) and upload it to the new repository.
 
 ### **Phase 3: Core Infrastructure Deployment**
 
