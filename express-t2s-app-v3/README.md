@@ -4,25 +4,25 @@ This project provides a comprehensive, hands-on walkthrough for building, contai
 
 ## Infrastructure Overview & Business Value
 
-### 1. **Containerization ([Docker](https://www.google.com/search?q=https://github.com/Here2ServeU/express-t2s-app-v3/blob/main/app/Dockerfile))**
+### 1. **Containerization ([Docker](app/Dockerfile))**
 
 * **What it is**: A platform that packages an application and its entire runtime environment (dependencies, libraries, and configurations) into a single, immutable container.
 * **Why use it**: It eliminates "dependency hell" by ensuring the app runs identically in development, testing, and production environments.
 * **Business Value**: Accelerates development cycles and reduces server costs by allowing multiple isolated applications to run efficiently on shared hardware.
 
-### 2. **Artifact Management ([AWS ECR](https://github.com/Here2ServeU/express-t2s-app-v3/tree/main/terraform/ecr))**
+### 2. **Artifact Management ([AWS ECR](terraform/ecr))**
 
 * **What it is**: A fully managed Docker container registry used to store, manage, and deploy container images securely.
 * **Why use it**: It serves as the single source of truth for your application versions and integrates natively with AWS deployment services.
 * **Business Value**: Ensures proprietary code is stored securely and is highly available for rapid deployment at any scale.
 
-### 3. **Orchestration ([AWS ECS](https://github.com/Here2ServeU/express-t2s-app-v3/tree/main/terraform/ecs))**
+### 3. **Orchestration ([AWS ECS](terraform/ecs))**
 
 * **What it is**: A scalable container orchestration service that manages the lifecycle of your Docker containers across a cluster.
 * **Why use it**: It removes the need to manage individual virtual machines, handling scaling, health monitoring, and load balancing automatically.
 * **Business Value**: Ensures high availability; if a container fails, ECS automatically restarts it, maintaining a seamless experience for users.
 
-### 4. **Infrastructure as Code ([Terraform](https://github.com/Here2ServeU/express-t2s-app-v3/tree/main/terraform))**
+### 4. **Infrastructure as Code ([terraform))**
 
 * **What it is**: A tool that allows you to define and provision your entire cloud infrastructure using declarative configuration files.
 * **Why use it**: It makes infrastructure repeatable and version-controlled, allowing you to track exactly how your cloud environment has evolved.
