@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: express-web-app
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/Here2ServeU/express-t2s-collection
+    path: charts/express-web-app
+    targetRevision: main
+    helm:
+      releaseName: express-web-app
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apps
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

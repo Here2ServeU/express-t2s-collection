@@ -1,0 +1,6 @@
+apiVersion: v2
+name: aiops
+description: AIOps Engine (API + ML-based anomalies + FinOps calculator)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

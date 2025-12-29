@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: express-web-app
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: express-web-app
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: express-web-app
+  template:
+    metadata:
+      labels:
+        app: express-web-app
+    spec:
+      containers:
+        - name: express
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+          env:
+            - name: PORT
+              value: "{{ .Values.service.targetPort }}"
+          # Optional probes—uncomment if you want Helm toggle
+          # readinessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: {{ .Values.service.targetPort }}
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
+          # livenessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: {{ .Values.service.targetPort }}
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 10

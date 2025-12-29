@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: {{ .Values.namespace }}
+  labels:
+    grafana_dashboard: "1"
+data:
+  aiops-dashboard.json: |
+    {
+      "title": "AIOps Dashboard",
+      "panels": [
+        {
+          "type": "graph",
+          "title": "Express CPU Usage",
+          "targets": [
+            { "expr": "container_cpu_usage_seconds_total{pod=~\"express-web-app.*\"}" }
+          ]
+        },
+        {
+          "type": "graph",
+          "title": "AIOps Risk Score",
+          "targets": [
+            { "expr": "aiops_risk_score" }
+          ]
+        }
+      ]
+    }

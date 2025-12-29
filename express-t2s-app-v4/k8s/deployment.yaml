@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: express-web-app
+  namespace: apps
+  labels:
+    app: express-web-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: express-web-app
+  template:
+    metadata:
+      labels:
+        app: express-web-app
+    spec:
+      containers:
+        - name: express
+          image: 780593603882.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app:latest
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+          # Uncomment if your app serves /health.
+          # readinessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: 3000
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
+          # livenessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: 3000
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 10

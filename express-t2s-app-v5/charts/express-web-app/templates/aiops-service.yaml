@@ -1,0 +1,13 @@
+{{- if .Values.aiops.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: aiops-api
+  namespace: {{ .Values.aiops.namespace }}
+spec:
+  selector:
+    app: aiops-api
+  ports:
+    - port: 80
+      targetPort: {{ .Values.aiops.service.port }}
+{{- end }}

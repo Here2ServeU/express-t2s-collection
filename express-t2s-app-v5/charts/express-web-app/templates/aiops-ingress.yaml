@@ -1,0 +1,25 @@
+{{- if and .Values.aiops.enabled .Values.aiops.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aiops-api
+  namespace: {{ .Values.aiops.namespace }}
+  annotations:
+    {{- range $k, $v := .Values.aiops.ingress.annotations }}
+    {{ $k }}: "{{ $v }}"
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.aiops.ingress.className }}
+  rules:
+    - http:
+        paths:
+          {{- range .Values.aiops.ingress.hosts }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: aiops-api
+                port:
+                  number: 80
+          {{- end }}
+{{- end }}

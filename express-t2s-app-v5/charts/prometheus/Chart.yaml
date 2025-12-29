@@ -1,0 +1,6 @@
+apiVersion: v2
+name: prometheus
+description: Prometheus monitoring chart for Express Web App + AIOps
+type: application
+version: 0.1.0
+appVersion: "2.52"

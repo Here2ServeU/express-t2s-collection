@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: express
-          image: 780593603882.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app:latest
+          image: 730335276920.dkr.ecr.us-east-1.amazonaws.com/t2s-express-app:latest
           ports:
             - name: http
               containerPort: 3000

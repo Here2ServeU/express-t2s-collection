@@ -1,0 +1,6 @@
+apiVersion: v2
+name: grafana
+description: Grafana dashboard for Express Web App + AIOps
+version: 0.1.0
+appVersion: "11.2"
+type: application

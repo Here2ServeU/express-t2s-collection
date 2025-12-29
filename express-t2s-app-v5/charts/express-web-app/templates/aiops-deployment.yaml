@@ -1,0 +1,28 @@
+{{- if .Values.aiops.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiops-api
+  namespace: {{ .Values.aiops.namespace }}
+  labels:
+    app: aiops-api
+spec:
+  replicas: {{ .Values.aiops.replicas.api }}
+  selector:
+    matchLabels:
+      app: aiops-api
+  template:
+    metadata:
+      labels:
+        app: aiops-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.aiops.service.port }}"
+    spec:
+      containers:
+        - name: aiops-api
+          image: "{{ .Values.aiops.image.repository }}:{{ .Values.aiops.image.tag }}"
+          imagePullPolicy: {{ .Values.aiops.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.aiops.service.port }}
+{{- end }}

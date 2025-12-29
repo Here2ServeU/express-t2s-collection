@@ -1,0 +1,86 @@
+# -------------------------------------------------------------
+# Node.js
+# -------------------------------------------------------------
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+
+# Production-specific
+npm-shrinkwrap.json
+yarn-error.log
+
+# Optional files
+.nyc_output/
+coverage/
+.lint/
+
+# Environment files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# TypeScript
+*.tsbuildinfo
+
+# -------------------------------------------------------------
+# Terraform (ignore state, cache, sensitive files)
+# -------------------------------------------------------------
+terraform/backend/.terraform/
+terraform/backend/.terraform.lock.hcl
+terraform/backend/terraform.tfstate*
+terraform/backend/terraform.tfstate.backup
+
+terraform/ecr/.terraform/
+terraform/ecr/.terraform.lock.hcl
+terraform/ecr/terraform.tfstate*
+terraform/ecr/terraform.tfstate.backup
+
+terraform/eks/.terraform/
+terraform/eks/.terraform.lock.hcl
+terraform/eks/terraform.tfstate*
+terraform/eks/terraform.tfstate.backup
+
+# Ignore all .tfstate files globally
+**/*.tfstate
+**/*.tfstate.backup
+
+# Terraform crash logs
+crash.log
+crash.*.log
+
+# Terraform variable files (local secrets)
+*.tfvars
+*.tfvars.json
+
+# -------------------------------------------------------------
+# Docker and Containers
+# -------------------------------------------------------------
+# Docker image build context
+# (Use .dockerignore for exclusions specific to image builds)
+
+# Docker temp dirs
+.docker/
+
+# -------------------------------------------------------------
+# General IDE and OS files
+# -------------------------------------------------------------
+# Visual Studio Code
+.vscode/
+
+# Intellij
+.idea/
+
+# Mac OS
+.DS_Store
+
+# Windows
+Thumbs.db

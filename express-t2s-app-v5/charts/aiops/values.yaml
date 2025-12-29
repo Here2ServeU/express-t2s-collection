@@ -1,0 +1,27 @@
+image:
+  repository: "730335276920.dkr.ecr.us-east-1.amazonaws.com/aiops-api"
+  tag: "latest"
+  pullPolicy: Always
+
+replicaCount: 1
+
+service:
+  name: aiops-api
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+container:
+  port: 8080
+  env: []
+  resources: {}
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: ""
+      paths:
+        - path: /aiops
+          pathType: Prefix

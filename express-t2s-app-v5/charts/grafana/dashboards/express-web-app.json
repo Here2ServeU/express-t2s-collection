@@ -1,0 +1,66 @@
+{
+  "id": null,
+  "title": "Express Web App — AIOps Demo Dashboard",
+  "tags": ["express", "aiops", "demo"],
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+
+    {
+      "type": "stat",
+      "title": "RPS (Requests Per Second)",
+      "targets": [
+        { "expr": "express:rps" }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 3 }
+    },
+
+    {
+      "type": "stat",
+      "title": "Error Rate (5xx / sec)",
+      "targets": [
+        { "expr": "express:error_rate" }
+      ],
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 3 }
+    },
+
+    {
+      "type": "graph",
+      "title": "Latency P90",
+      "targets": [
+        { "expr": "express:latency_p90" }
+      ],
+      "gridPos": { "x": 0, "y": 3, "w": 12, "h": 6 }
+    },
+
+    {
+      "type": "graph",
+      "title": "Latency P99",
+      "targets": [
+        { "expr": "express:latency_p99" }
+      ],
+      "gridPos": { "x": 0, "y": 9, "w": 12, "h": 6 }
+    },
+
+    {
+      "type": "graph",
+      "title": "Pod CPU Usage",
+      "targets": [
+        { "expr": "rate(container_cpu_usage_seconds_total{namespace=\"apps\", pod=~\"express-web-app.*\"}[2m])" }
+      ],
+      "gridPos": { "x": 0, "y": 15, "w": 12, "h": 6 }
+    },
+
+    {
+      "type": "graph",
+      "title": "Pod Memory Usage",
+      "targets": [
+        { "expr": "container_memory_usage_bytes{namespace=\"apps\", pod=~\"express-web-app.*\"}" }
+      ],
+      "gridPos": { "x": 0, "y": 21, "w": 12, "h": 6 }
+    }
+
+  ]
+}

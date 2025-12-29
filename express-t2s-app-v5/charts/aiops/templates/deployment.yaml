@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiops-api
+  labels:
+    app: aiops-api
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: aiops-api
+  template:
+    metadata:
+      labels:
+        app: aiops-api
+    spec:
+      containers:
+        - name: aiops-api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.container.port }}
+          env:
+            {{- range .Values.container.env }}
+            - name: {{ .name }}
+              value: "{{ .value }}"
+            {{- end }}
