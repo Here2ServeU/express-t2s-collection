@@ -1,79 +1,169 @@
-# name: CI/CD Pipeline
+name: CI/CD Pipeline (Backend -> ECR -> Build/Push -> ECS)
 
-# on:
-#   push:
-#     branches: [ main ]
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
-# env:
-#   AWS_REGION: us-east-1                   # Update to your region
-#   ECR_REPOSITORY: express-t2s-app-repo    # Matches your REPO_NAME in script
-#   ECS_CLUSTER: express-t2s-app-cluster    # Matches your terraform cluster name
-#   ECS_SERVICE: express-t2s-app-service    # Matches your terraform service name
+env:
+  AWS_REGION: us-east-1
 
-# jobs:
-#   # 1. Provision Infrastructure
-#   provision-infra:
-#     name: Provision AWS Infrastructure
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v4
+  # Must match your ECR repo name used in scripts/build_and_push.sh
+  ECR_REPOSITORY: express-t2s-app-repo
 
-#       - name: Setup Terraform
-#         uses: hashicorp/setup-terraform@v3
+  # Must match your ECS cluster/service names (created by terraform/ecs)
+  ECS_CLUSTER: express-t2s-app-cluster
+  ECS_SERVICE: express-t2s-app-service
 
-#       - name: Configure AWS Credentials
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: ${{ env.AWS_REGION }}
+  # Terraform directories (matches your repo structure)
+  TF_BACKEND_DIR: terraform/backend
+  TF_ECR_DIR: terraform/ecr
+  TF_ECS_DIR: terraform/ecs
 
-#       - name: Terraform Init & Apply
-#         working-directory: ./terraform  # Path to your .tf files
-#         run: |
-#           terraform init
-#           terraform apply -auto-approve
+jobs:
+  provision-backend:
+    name: "1) Provision Terraform Backend (S3/DynamoDB)"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-#   # 2. Build, Tag, and Push using your script
-#   build-and-push:
-#     name: Build and Push Image
-#     needs: provision-infra
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-#       - name: Configure AWS Credentials
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-#       - name: Run Build and Push Script
-#         run: |
-#           chmod +x ./scripts/build_and_push.sh
-#           ./scripts/build_and_push.sh
-#         env:
-#           AWS_REGION: ${{ env.AWS_REGION }}
-#           REPO_NAME: ${{ env.ECR_REPOSITORY }}
+      - name: Terraform Init & Apply (backend)
+        working-directory: ${{ env.TF_BACKEND_DIR }}
+        run: |
+          terraform init
+          terraform apply -auto-approve
 
-#   # 3. Deploy to ECS
-#   deploy-ecs:
-#     name: Deploy to Amazon ECS
-#     needs: build-and-push
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Configure AWS Credentials
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: ${{ env.AWS_REGION }}
+  provision-ecr:
+    name: "2) Provision ECR Repository"
+    runs-on: ubuntu-latest
+    needs: [ provision-backend ]
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-#       - name: Update ECS Service
-#         run: |
-#           aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} \
-#                                --service ${{ env.ECS_SERVICE }} \
-#                                --force-new-deployment
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init & Apply (ecr)
+        working-directory: ${{ env.TF_ECR_DIR }}
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+  build-and-push:
+    name: "3) Build & Push Docker Image to ECR"
+    runs-on: ubuntu-latest
+    needs: [ provision-ecr ]
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure build script is executable
+        run: chmod +x ./scripts/build_and_push.sh
+
+      - name: Run Build and Push Script
+        run: ./scripts/build_and_push.sh
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          REPO_NAME: ${{ env.ECR_REPOSITORY }}
+          # Optional if your script uses these:
+          IMAGE_TAG: ${{ github.sha }}
+
+  provision-ecs:
+    name: "4) Provision ECS Cluster/Service via Terraform"
+    runs-on: ubuntu-latest
+    needs: [ build-and-push ]
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init & Apply (ecs)
+        working-directory: ${{ env.TF_ECS_DIR }}
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+  deploy-ecs:
+    name: "5) Deploy (Force New ECS Deployment)"
+    runs-on: ubuntu-latest
+    needs: [ provision-ecs ]
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update ECS Service
+        run: |
+          aws ecs update-service \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --service "${{ env.ECS_SERVICE }}" \
+            --force-new-deployment
+
+      - name: Wait for stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --services "${{ env.ECS_SERVICE }}"
