@@ -1,0 +1,16 @@
+# GitHub Actions OIDC (no long-lived AWS keys)
+# Add this to your workflow file in the application repo.
+
+permissions:
+  id-token: write
+  contents: read
+
+steps:
+  - name: Configure AWS credentials (OIDC)
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      aws-region: ${{ secrets.AWS_REGION }}
+
+  - name: Validate identity (STS)
+    run: aws sts get-caller-identity
