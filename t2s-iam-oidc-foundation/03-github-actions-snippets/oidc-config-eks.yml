@@ -1,0 +1,30 @@
+name: OIDC Validate EKS (Snippet)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  EKS_CLUSTER_NAME: my-eks-cluster
+
+jobs:
+  eks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/t2s-gha-eks-deploy-prod
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate identity
+        run: aws sts get-caller-identity
+
+      - name: Validate EKS permissions
+        run: |
+          aws eks list-clusters
+          aws eks describe-cluster --name "${{ env.EKS_CLUSTER_NAME }}" --region "${{ env.AWS_REGION }}"

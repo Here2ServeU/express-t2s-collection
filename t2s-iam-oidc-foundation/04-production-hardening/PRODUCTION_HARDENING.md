@@ -1,57 +1,26 @@
-# Production Hardening for GitHub OIDC Roles (Recommended)
+# Production Hardening — GitHub OIDC Roles (T2S)
 
-Use these controls to make your OIDC setup production-like.
-
-## 1) Restrict by repo AND branch (already enabled)
-- Trust policy should include:
-  - `repo:OWNER/REPO`
-  - `ref:refs/heads/main` (or your prod branch)
-
-## 2) Restrict by workflow file (recommended for prod)
-GitHub OIDC includes claims such as `job_workflow_ref`.
-You can restrict trust policy further to only allow a specific workflow file.
-
-Example condition to add under `Condition`:
-
-```json
-"StringEquals": {
-  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-  "token.actions.githubusercontent.com:job_workflow_ref": "${WORKFLOW_REF}"
-}
-```
-
-## 3) Use GitHub Environments for prod approvals
-- Create a GitHub Environment named `prod`
-- Require manual approval
-- Only allow the prod workflow to run after approval
-
-## 4) Short session duration
-Set role `MaxSessionDuration` low (e.g., 3600 seconds).
-Example:
+## Delete the admin bootstrap role
+If you created the admin role, delete it after verification:
 
 ```bash
-aws iam update-role --role-name t2s-gha-deploy-prod --max-session-duration 3600
+bash 01-roles/delete_role_admin_bootstrap.sh t2s-gha-admin-bootstrap
 ```
 
-## 5) Separate accounts for prod
-Best practice:
-- Dev account
-- Staging account
-- Prod account
-Each account has its own OIDC provider and roles.
+## Restrict deployments
+- Use GitHub Environments for prod with required reviewers
+- Deploy prod from tags or release branches only
 
-## 6) CloudTrail + alerts
-- Ensure CloudTrail is enabled
-- Alert on:
-  - `AssumeRoleWithWebIdentity`
-  - IAM policy changes
-  - Unexpected role assumptions
+## Separate AWS accounts
+Use separate AWS accounts for dev, staging, prod.
 
-## 7) Break-glass admin role
-- If you create `t2s-gha-admin-bootstrap`, delete it after bootstrap.
-- If you must keep it, restrict it to:
-  - One repo
-  - One workflow
-  - One branch
-  - And require GitHub environment approvals
+## Short session duration
+Keep sessions short (15–60 minutes). Adjust in role settings if needed.
 
+## Audit logging
+Enable CloudTrail and GuardDuty.
+
+## Two-role model for EKS
+Consider:
+- EKS provisioning role (Terraform creates cluster/VPC/IAM)
+- EKS deploy-only role (kubectl/helm only)

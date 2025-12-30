@@ -1,0 +1,33 @@
+name: OIDC Deploy to ECS (Snippet)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECS_CLUSTER: express-t2s-app-cluster
+  ECS_SERVICE: express-t2s-app-service
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/t2s-gha-ecs-deploy-prod
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate identity
+        run: aws sts get-caller-identity
+
+      - name: Force new ECS deployment
+        run: |
+          aws ecs update-service             --cluster "${{ env.ECS_CLUSTER }}"             --service "${{ env.ECS_SERVICE }}"             --force-new-deployment
+
+      - name: Wait for stability
+        run: aws ecs wait services-stable --cluster "${{ env.ECS_CLUSTER }}" --services "${{ env.ECS_SERVICE }}"

@@ -5,7 +5,7 @@
       "Sid": "GitHubActionsAssumeRoleWithOIDC",
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
+        "Federated": "arn:aws:iam::{{AWS_ACCOUNT_ID}}:oidc-provider/token.actions.githubusercontent.com"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
@@ -13,7 +13,7 @@
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/${GITHUB_BRANCH}"
+          "token.actions.githubusercontent.com:sub": "repo:{{GITHUB_ORG}}/{{GITHUB_REPO}}:ref:refs/heads/{{GITHUB_BRANCH}}"
         }
       }
     }
