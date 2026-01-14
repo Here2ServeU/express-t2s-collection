@@ -1,0 +1,8 @@
+{
+  "name": "aiops-webhook-receiver",
+  "version": "1.0.0",
+  "description": "Receives Alertmanager webhooks and forwards to Slack via Incoming Webhook",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^4.19.2" }
+}

@@ -1,0 +1,29 @@
+groups:
+  - name: aiops-demo-rules
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[30s])) > 1
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "High 5xx error rate detected"
+          description: "5xx errors are > 1 req/sec for 30s (simulated incident)."
+
+      - alert: CPUburnActive
+        expr: avg_over_time(demo_cpu_burn_active[30s]) > 0.5
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU burn simulation active"
+          description: "/burn endpoint is actively burning CPU."
+
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[30s])) by (le)) > 0.5
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency (p95)"
+          description: "p95 latency > 0.5s for 30s."
