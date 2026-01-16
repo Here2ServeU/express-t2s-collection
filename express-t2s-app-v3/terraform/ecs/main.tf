@@ -104,10 +104,10 @@ resource "aws_lb_target_group" "main" {
   health_check {
     path                = "/"
     healthy_threshold   = 2
-    unhealthy_threshold = 10
-    timeout             = 20
-    interval            = 60
-    matcher             = "200-499"
+    unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 30
+    matcher             = "200"
   }
 }
 
@@ -124,8 +124,6 @@ resource "aws_lb_listener" "http" {
 # ---------------------------------------------------------------------------------------------------------------------
 # 4. ECS CLUSTER & ROLES
 # ---------------------------------------------------------------------------------------------------------------------
-
-# FIXED: Added the missing ECS Cluster declaration
 resource "aws_ecs_cluster" "main" {
   name = "${var.app_name}-cluster"
 
@@ -137,38 +135,24 @@ resource "aws_ecs_cluster" "main" {
 
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "${var.app_name}-execution-role"
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{ Action = "sts:AssumeRole", Effect = "Allow", Principal = { Service = "ecs-tasks.amazonaws.com" } }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "execution_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-resource "aws_iam_role_policy" "ecr_permissions" {
-  name = "${var.app_name}-ecr-permissions"
-  role = aws_iam_role.ecs_task_execution_role.id
-  policy = jsonencode({
-    Version = "2012-10-17"
     Statement = [{
+      Action = "sts:AssumeRole"
       Effect = "Allow"
-      Action = [
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ]
-      Resource = "*"
+      Principal = {
+        Service = "ecs-tasks.amazonaws.com"
+      }
     }]
   })
 }
 
-# ADDED: Added missing CloudWatch Log Group for the Task Definition
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.app_name}"
   retention_in_days = 7
@@ -211,6 +195,7 @@ resource "aws_ecs_service" "main" {
   network_configuration {
     subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs_tasks_sg.id]
+    # Enabled to allow containers to reach the internet for image pulls and health checks
     assign_public_ip = true
   }
 

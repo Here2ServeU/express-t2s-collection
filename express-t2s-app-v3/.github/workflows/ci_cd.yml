@@ -2,176 +2,144 @@ name: CI/CD Pipeline (Backend -> ECR -> Build/Push -> ECS)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
+    inputs:
+      action:
+        description: 'Select action: deploy or destroy'
+        required: true
+        default: deploy
+        type: choice
+        options:
+          - deploy
+          - destroy
 
-# Required for OIDC (no AWS access keys)
 permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: express-t2s-ecs-prod
+  cancel-in-progress: false
+
 env:
   AWS_REGION: us-east-1
-
-  # Must match your ECR repo name used in scripts/build_and_push.sh
-  ECR_REPOSITORY: express-t2s-app-repo
-
-  # Must match your ECS cluster/service names (created by terraform/ecs)
-  ECS_CLUSTER: express-t2s-app-cluster
-  ECS_SERVICE: express-t2s-app-service
-
-  # Terraform directories (matches your repo structure)
   TF_BACKEND_DIR: terraform/backend
   TF_ECR_DIR: terraform/ecr
   TF_ECS_DIR: terraform/ecs
-
-  # OIDC Role (update with your real AWS account + role name)
-  # Example role: t2s-gha-ecs-deploy-prod
-  AWS_OIDC_ROLE_ARN: arn:aws:iam::123456789012:role/t2s-gha-ecs-deploy-prod
+  ECR_REPOSITORY: express-t2s-app-repo
+  ECS_CLUSTER: express-t2s-app-cluster
+  ECS_SERVICE: express-t2s-app-service
+  AWS_OIDC_ROLE_ARN: arn:aws:iam::730335276920:role/t2s-gha-ecs-deploy-prod
+  TF_VAR_aws_region: us-east-1
+  TF_VAR_repo_name: express-t2s-app-repo
+  TF_VAR_bucket_name: express-t2s-app-terraform-state-dev
+  TF_VAR_lock_table: express-t2s-app-state-lock
+  TF_VAR_environment: prod
 
 jobs:
+  # --- DEPLOYMENT JOBS ---
+  # These run on 'push' OR when manual 'action' is 'deploy'
   provision-backend:
-    name: "1) Provision Terraform Backend (S3/DynamoDB)"
+    name: "1) Provision Terraform Backend"
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
+    if: github.event_name == 'push' || github.event.inputs.action == 'deploy'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Validate identity
-        run: aws sts get-caller-identity
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init & Apply (backend)
+      - name: Terraform Init & Apply (Backend)
         working-directory: ${{ env.TF_BACKEND_DIR }}
         run: |
-          terraform init
-          terraform apply -auto-approve
+          terraform init -input=false
+          terraform apply -auto-approve -input=false
 
   provision-ecr:
     name: "2) Provision ECR Repository"
     runs-on: ubuntu-latest
-    needs: [ provision-backend ]
-    defaults:
-      run:
-        shell: bash
+    needs: [provision-backend]
+    if: github.event_name == 'push' || github.event.inputs.action == 'deploy'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Validate identity
-        run: aws sts get-caller-identity
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init & Apply (ecr)
+      - name: Terraform Init & Apply (ECR)
         working-directory: ${{ env.TF_ECR_DIR }}
         run: |
-          terraform init
-          terraform apply -auto-approve
+          terraform init -input=false
+          terraform apply -auto-approve -input=false
 
   build-and-push:
-    name: "3) Build & Push Docker Image to ECR"
+    name: "3) Build & Push Docker Image"
     runs-on: ubuntu-latest
-    needs: [ provision-ecr ]
-    defaults:
-      run:
-        shell: bash
+    needs: [provision-ecr]
+    if: github.event_name == 'push' || github.event.inputs.action == 'deploy'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Validate identity
-        run: aws sts get-caller-identity
-
       - name: Ensure build script is executable
-        run: chmod +x ./scripts/build_and_push.sh
-
+        run: chmod +x ./terraform/ecr/build_and_push.sh
       - name: Run Build and Push Script
-        run: ./scripts/build_and_push.sh
+        run: ./terraform/ecr/build_and_push.sh
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
           REPO_NAME: ${{ env.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
 
   provision-ecs:
-    name: "4) Provision ECS Cluster/Service via Terraform"
+    name: "4) Provision ECS via Terraform"
     runs-on: ubuntu-latest
-    needs: [ build-and-push ]
-    defaults:
-      run:
-        shell: bash
+    needs: [build-and-push]
+    if: github.event_name == 'push' || github.event.inputs.action == 'deploy'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Validate identity
-        run: aws sts get-caller-identity
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init & Apply (ecs)
+      - name: Terraform Init & Apply (ECS)
         working-directory: ${{ env.TF_ECS_DIR }}
         run: |
-          terraform init
-          terraform apply -auto-approve
+          terraform init -input=false
+          terraform apply -auto-approve -input=false
 
   deploy-ecs:
-    name: "5) Deploy (Force New ECS Deployment)"
+    name: "5) Force ECS Deployment"
     runs-on: ubuntu-latest
-    needs: [ provision-ecs ]
-    defaults:
-      run:
-        shell: bash
+    needs: [provision-ecs]
+    if: github.event_name == 'push' || github.event.inputs.action == 'deploy'
     steps:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Validate identity
-        run: aws sts get-caller-identity
-
-      - name: Update ECS Service (Force new deployment)
+      - name: Force new deployment
         run: |
           aws ecs update-service \
             --cluster "${{ env.ECS_CLUSTER }}" \
             --service "${{ env.ECS_SERVICE }}" \
             --force-new-deployment
 
-      - name: Wait for stability
-        run: |
-          aws ecs wait services-stable \
-            --cluster "${{ env.ECS_CLUSTER }}" \
-            --services "${{ env.ECS_SERVICE }}"
+ 

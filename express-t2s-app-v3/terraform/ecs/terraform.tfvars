@@ -1,9 +1,0 @@
-aws_region      = "us-east-1"
-app_name        = "express-t2s-app"
-environment     = "dev"
-vpc_cidr        = "10.0.0.0/16"
-container_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/express-t2s-app-repo:latest"
-container_port  = 3000
-task_cpu        = 256
-task_memory     = 512
-desired_count   = 2
