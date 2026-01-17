@@ -1,6 +1,6 @@
 # AIOps Demo Repository (Express Web App + Prometheus + Grafana + Slack + Human-Approved Remediation)
 
-This repo is a **complete, copy/paste-ready demo** for your **January 14 AIOps class**.
+This repo is a **complete, copy/paste-ready demo**.
 
 You will run a **containerized Express Web App** with:
 - **Prometheus** for metrics scraping
@@ -12,7 +12,7 @@ You will run a **containerized Express Web App** with:
 
 ---
 
-## What You’ll Demo Live (End-to-End)
+## End-to-End Platform
 1. Start the stack (Docker Compose)
 2. Confirm the app is healthy (`/health`)
 3. Open Grafana dashboards
@@ -37,7 +37,7 @@ You will run a **containerized Express Web App** with:
 
 ### 1) Clone and enter the repo
 ```bash
-git clone <YOUR_REPO_URL> aiops-demo-repo
+git clone https://github.com/Here2ServeU/aiops-demo-t2s
 cd aiops-demo-repo
 ```
 
