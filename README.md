@@ -43,12 +43,6 @@ export GITHUB_REPO="express-t2s-collection"
 
 ```
 
-
-
-### Relevant Links
-
-* [GitHub Actions Snippets](https://www.google.com/search?q=https://github.com/Here2ServeU/express-t2s-collection/tree/main/t2s-iam-oidc-foundation/03-github-actions-snippets)
-* [Production Hardening Guide](https://www.google.com/search?q=https://github.com/Here2ServeU/express-t2s-collection/blob/main/t2s-iam-oidc-foundation/04-production-hardening/PRODUCTION_HARDENING.md)
 ---
 ## Author
 
