@@ -1,54 +1,54 @@
-## The Real-World Project Journey
+# Express Web App to Enterprise AIOps Curriculum
 
-### Master the Industry-Standard DevOps Lifecycle
+This repository provides a comprehensive, hands-on journey from local Node.js development to managing an enterprise-grade, AI-driven cloud platform. It mirrors architecture used by industry leaders like Netflix and Shopify.
 
-In this bootcamp, you don't just learn theory. You build, secure, and scale a production-ready application from the ground up. This project follows the same architectural patterns used by industry leaders like [Netflix](https://github.com/Here2ServeU/express-t2s-collection#why-this-series), [Facebook](https://github.com/Here2ServeU/express-t2s-collection#why-this-series), and [Comcast](https://github.com/Here2ServeU/express-t2s-collection#why-this-series).
+## Curriculum Roadmap
 
----
+### Phase 1: Foundations & Containerization
 
-### Phase 1: Application & Containerization
+* **v1: Local Development**: Build a robust foundation using Node.js and Express.
+* **v2: Docker & AWS Registry**: Package the app into an immutable container and push it to **AWS ECR**.
 
-**The Goal:** Transition from "it works on my machine" to a portable, industry-standard container.
+### Phase 2: Orchestration & Infrastructure as Code (IaC)
 
-* **Project 1: The Express.js Foundation** – Build a robust base application using Node.js.
-* **Project 2: Dockerization** – Master containerization by creating optimized Docker images for your application.
-* **Project 3: Manifest Architecture** – Learn to write Kubernetes manifests that define how your app lives in the cloud.
+* **v3 & v4: Terraform Automation**: Use **Terraform** to provision AWS ECS, VPCs, and Load Balancers.
+* **v5: Enterprise Kubernetes (EKS)**: Deploy a scalable cluster on **Amazon EKS** with an **AWS ALB Controller**.
 
-### Phase 2: Cloud Infrastructure with Terraform
+### Phase 3: Modern Ops (AIOps, GitOps & FinOps)
 
-**The Goal:** Treat your infrastructure as code (IaC) to eliminate manual errors and ensure scalability.
-
-* **Project 4: Automated AWS Provisioning** – Use [Terraform](https://camo.githubusercontent.com/04d84120e2cb2c8995e8f34f5584b755f66fd211fa9edcdf9020297a7a28e8a9/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4961432d5465727261666f726d2d3632334345343f6c6f676f3d7465727261666f726d) to build a professional-grade cloud environment including a [VPC, IAM roles, and an ECR private registry](https://github.com/Here2ServeU/express-t2s-collection#what-youll-learn).
-* **Project 5: Enterprise Kubernetes (EKS)** – Deploy your first managed Kubernetes cluster on Amazon EKS.
-
-### Phase 3: Scaling, Security & AIOps
-
-**The Goal:** Optimize for the modern web—secure, cost-effective, and AI-driven.
-
-* **Project 6: Production Scaling** – Implement Helm package management and scale your application automatically with [Horizontal Pod Autoscaling (HPA)](https://github.com/Here2ServeU/express-t2s-collection#what-youll-learn).
-* **Project 7: The "Golden Signals" of Monitoring** – Set up comprehensive Monitoring and Observability pipelines.
-* **Project 8: Advanced Operations** – Deep dive into **DevSecOps** (Security), **FinOps** (Cost Optimization), and **AIOps** (Integrating AI into your infrastructure).
+* **v6: Enterprise Modernization**: Implement **ArgoCD** for GitOps, **Prometheus/Grafana** for observability, and custom **AIOps** engines for anomaly detection.
+* **AIOps Demo**: Includes a specialized module for human-in-the-loop remediation via Slack.
 
 ---
 
-### 🛠️ Your Professional Tech Stack
+## Foundational Setup: t2s-iam-oidc-foundation
 
-By the end of this series, you will be proficient in the tools required for [Top 1% career paths](https://github.com/Here2ServeU/express-t2s-collection#author):
+This foundation establishes secure, production-style authentication between GitHub Actions and AWS using OpenID Connect (OIDC), eliminating long-lived access keys.
 
-| Category | Tools You Will Use |
-| --- | --- |
-| **Development** | [Node.js](https://github.com/Here2ServeU/express-t2s-collection#tools-youll-use), Express.js |
-| **Orchestration** | [Kubernetes](https://camo.githubusercontent.com/9176e30da01e1f5cfc9d44c9150976b29571e7e2ebd22437e2c7be736ebb15fe/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4b756265726e657465732d434b412d626c75653f6c6f676f3d6b756265726e65746573) (EKS), [Helm](https://github.com/Here2ServeU/express-t2s-collection#tools-youll-use), kubectl |
-| **Infrastructure** | [Terraform](https://camo.githubusercontent.com/04d84120e2cb2c8995e8f34f5584b755f66fd211fa9edcdf9020297a7a28e8a9/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4961432d5465727261666f726d2d3632334345343f6c6f676f3d7465727261666f726d), AWS (VPC, ECR, IAM) |
-| **Automation** | [Docker](https://github.com/Here2ServeU/express-t2s-collection#tools-youll-use), [GitHub Actions](https://camo.githubusercontent.com/af75ba475b024c666599fbaca8441b7dc59ba39d19040f324e2625f8bbcc7e63/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f43492f43442d476974487562253230416374696f6e732d626c75653f6c6f676f3d676974687562616374696f6e73) |
-| **Modern Ops** | [AIOps](https://github.com/Here2ServeU/express-t2s-collection#what-youll-learn), [FinOps](https://camo.githubusercontent.com/a199471182ee763042d7cbf5bdb5d8c755ada62f6dc474d3cab53f3543d74eab/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f46696e4f70732d436f73742532304f7074696d697a6174696f6e2d677265656e3f6c6f676f3d6d6f6e6579), [DevSecOps](https://github.com/Here2ServeU/express-t2s-collection#what-youll-learn) |
+### Why OIDC?
 
----
+* **No static keys to leak**: Credentials are short-lived and auditable.
+* **Granular Control**: Access is restricted by specific repository and branch.
 
-### Who You Will Become
+### Quick Start
 
-You will graduate not just as a student, but as a confident engineer who can **design, deploy, and manage production-ready applications** at scale. Whether you are a [beginner](https://github.com/Here2ServeU/express-t2s-collection#who-is-this-for) or a [developer looking to transition](https://github.com/Here2ServeU/express-t2s-collection#who-is-this-for), you will gain the skills to move an app from a local environment to the [global cloud](https://github.com/Here2ServeU/express-t2s-collection#next-steps).
+1. **Create OIDC Provider**: Run `bash 00-oidc-provider/create_oidc_provider.sh`.
+2. **Create Least-Privilege Roles**: Roles are available for both **ECS** and **EKS** pipelines.
+3. **Configure Environment Variables**:
+```bash
+export AWS_REGION="us-east-1"
+export AWS_ACCOUNT_ID="123456789012"
+export GITHUB_ORG="Here2ServeU"
+export GITHUB_REPO="express-t2s-collection"
 
+```
+
+
+
+### Relevant Links
+
+* [GitHub Actions Snippets](https://www.google.com/search?q=https://github.com/Here2ServeU/express-t2s-collection/tree/main/t2s-iam-oidc-foundation/03-github-actions-snippets)
+* [Production Hardening Guide](https://www.google.com/search?q=https://github.com/Here2ServeU/express-t2s-collection/blob/main/t2s-iam-oidc-foundation/04-production-hardening/PRODUCTION_HARDENING.md)
 ---
 ## Author
 
