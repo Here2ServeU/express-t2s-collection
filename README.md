@@ -70,11 +70,11 @@ Helping businesses modernize infrastructure and guiding engineers into top 1% ca
 
 - [LinkedIn](https://www.linkedin.com/in/ready2assist/)
 - [GitHub](https://github.com/Here2ServeU)
-- [Medium](https://medium.com/@here2serveyou)
+- [My Website](https://www.emmanuelnaweji.com)
 
 ---
 
 ## Book a Free Consultation
 - If you want me to help you with DevOps/Cloud/AI skills. 
 - If you want me to help modernize your cloud infrastructure, DevOps, or AI strategy.  
-👉🏾 [Schedule a free 1:1 consultation](https://bit.ly/letus-meet)
+👉🏾 [Let's Keep in Touch](https://www.emmanuelnaweji.com/hire-me)
