@@ -1,6 +1,45 @@
+# 1. Create the OIDC Identity Provider for GitHub Actions
+data "tls_certificate" "github" {
+  url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
+}
+
+resource "aws_iam_openid_connect_provider" "github" {
+  url             = "https://token.actions.githubusercontent.com"
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.github.certificates[0].sha1_fingerprint]
+}
+
+# 2. Create the IAM Role with a Trust Policy for OIDC
+resource "aws_iam_role" "gha_eks_deploy_role" {
+  name = "t2s-gha-eks-deploy-prod"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.github.arn
+        }
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+          }
+          StringLike = {
+            # Updated to point to the current repository: express-t2s-app-v4
+            "token.actions.githubusercontent.com:sub": "repo:Here2ServeU/express-t2s-app-v4:*"
+          }
+        }
+      }
+    ]
+  })
+}
+
+# 3. Attach updated EKS Permissions Policy to the Role
 resource "aws_iam_role_policy" "gha_deployment_policy" {
   name = "T2SGHADeploymentPolicy"
-  role = "t2s-gha-ecs-deploy-prod"
+  role = aws_iam_role.gha_eks_deploy_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -26,24 +65,7 @@ resource "aws_iam_role_policy" "gha_deployment_policy" {
         Sid    = "AllowLoadBalancerManagement"
         Effect = "Allow"
         Action = [
-          "elasticloadbalancing:DescribeLoadBalancers",
-          "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeListeners",
-          "elasticloadbalancing:DescribeLoadBalancerAttributes",
-          "elasticloadbalancing:DescribeTargetGroupAttributes",
-          "elasticloadbalancing:DescribeTags",
-          "elasticloadbalancing:DescribeListenerAttributes",
-          "elasticloadbalancing:CreateLoadBalancer",
-          "elasticloadbalancing:DeleteLoadBalancer",
-          "elasticloadbalancing:CreateTargetGroup",
-          "elasticloadbalancing:DeleteTargetGroup",
-          "elasticloadbalancing:CreateListener",
-          "elasticloadbalancing:DeleteListener",
-          "elasticloadbalancing:ModifyLoadBalancerAttributes",
-          "elasticloadbalancing:ModifyTargetGroup",
-          "elasticloadbalancing:ModifyTargetGroupAttributes",
-          "elasticloadbalancing:AddTags",
-          "elasticloadbalancing:RemoveTags"
+          "elasticloadbalancing:*"
         ]
         Resource = "*"
       },
@@ -63,7 +85,9 @@ resource "aws_iam_role_policy" "gha_deployment_policy" {
           "iam:AttachRolePolicy",
           "iam:DetachRolePolicy",
           "iam:TagRole",
-          "iam:PassRole"
+          "iam:PassRole",
+          "iam:CreateServiceLinkedRole",
+          "iam:GetOpenIDConnectProvider"
         ]
         Resource = "*"
       },
@@ -71,13 +95,7 @@ resource "aws_iam_role_policy" "gha_deployment_policy" {
         Sid    = "AllowCloudWatchLogsFull"
         Effect = "Allow"
         Action = [
-          "logs:CreateLogGroup",
-          "logs:DeleteLogGroup",
-          "logs:DescribeLogGroups",
-          "logs:PutRetentionPolicy",
-          "logs:ListTagsForResource",
-          "logs:TagResource",
-          "logs:UntagResource"
+          "logs:*"
         ]
         Resource = "*"
       },
@@ -91,11 +109,20 @@ resource "aws_iam_role_policy" "gha_deployment_policy" {
         Resource = "*"
       },
       {
-        Sid    = "AllowECRandECS"
+        Sid    = "AllowECRandEKS"
         Effect = "Allow"
         Action = [
           "ecr:*",
-          "ecs:*"
+          "eks:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowKMSForEKS"
+        Effect = "Allow"
+        Action = [
+          "kms:DescribeKey",
+          "kms:CreateGrant"
         ]
         Resource = "*"
       }
