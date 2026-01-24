@@ -1,0 +1,13 @@
+image:
+  repository: "REPLACE_WITH_REGISTRY/express-t2s"
+  tag: "latest"
+
+replicaCount: 2
+
+ingress:
+  enabled: true
+  hosts:
+    - host: "dev.express.local"
+      paths:
+        - path: /
+          pathType: Prefix

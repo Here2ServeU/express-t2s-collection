@@ -1,0 +1,6 @@
+aws_region      = "us-east-1"
+project_name    = "t2s-golden"
+cluster_version = "1.29"
+
+# Optional (bcrypt hash)
+# argocd_admin_password = "$2a$10$REPLACE_WITH_BCRYPT_HASH"

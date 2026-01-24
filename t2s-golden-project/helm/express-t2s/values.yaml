@@ -1,0 +1,27 @@
+replicaCount: 2
+
+image:
+  repository: "REPLACE_WITH_REGISTRY/express-t2s"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: ""
+  annotations: {}
+  hosts:
+    - host: "express.local"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources: {}
+env:
+  - name: NODE_ENV
+    value: "production"
