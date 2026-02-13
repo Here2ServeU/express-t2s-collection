@@ -1,0 +1,15 @@
+services:
+  node-api:
+    build: ./apps/node-api
+    ports: ["3000:3000"]
+    environment: ["PORT=3000"]
+
+  flask-api:
+    build: ./apps/flask-api
+    ports: ["5000:5000"]
+    environment: ["PORT=5000"]
+
+  web-ui:
+    build: ./apps/web-ui
+    ports: ["8080:80"]
+    depends_on: [node-api, flask-api]

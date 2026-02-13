@@ -1,0 +1,4 @@
+aws_region = "us-east-1"
+name       = "express-reliability-v3"
+node_image  = "123456789012.dkr.ecr.us-east-1.amazonaws.com/node-api:v1"
+flask_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/flask-api:v1"

@@ -1,0 +1,78 @@
+name: ECS CI/CD (Build → Push ECR → Deploy ECS)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push node-api
+        id: build_node
+        run: |
+          ECR_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/node-api"
+          docker build -t "${ECR_URI}:${GITHUB_SHA}" apps/node-api
+          docker push "${ECR_URI}:${GITHUB_SHA}"
+          echo "image=${ECR_URI}:${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build and push flask-api
+        id: build_flask
+        run: |
+          ECR_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/flask-api"
+          docker build -t "${ECR_URI}:${GITHUB_SHA}" apps/flask-api
+          docker push "${ECR_URI}:${GITHUB_SHA}"
+          echo "image=${ECR_URI}:${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Render task definition (node)
+        id: render_node
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ secrets.ECS_TASKDEF_NODE_PATH }}
+          container-name: node-api
+          image: ${{ steps.build_node.outputs.image }}
+
+      - name: Deploy node service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render_node.outputs.task-definition }}
+          service: ${{ secrets.ECS_NODE_SERVICE_NAME }}
+          cluster: ${{ secrets.ECS_CLUSTER_NAME }}
+          wait-for-service-stability: true
+
+      - name: Render task definition (flask)
+        id: render_flask
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ secrets.ECS_TASKDEF_FLASK_PATH }}
+          container-name: flask-api
+          image: ${{ steps.build_flask.outputs.image }}
+
+      - name: Deploy flask service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render_flask.outputs.task-definition }}
+          service: ${{ secrets.ECS_FLASK_SERVICE_NAME }}
+          cluster: ${{ secrets.ECS_CLUSTER_NAME }}
+          wait-for-service-stability: true

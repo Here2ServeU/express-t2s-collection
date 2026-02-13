@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Express Reliability Platform (Beginner UI)</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0; }
+    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #ccc; cursor: pointer; }
+    input { padding: 10px; border-radius: 10px; border: 1px solid #ccc; width: 120px; }
+    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+    pre { background: #f6f6f6; padding: 12px; border-radius: 12px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Express Reliability Platform</h1>
+  <p>Node API: <code>http://localhost:3000</code> | Flask API: <code>http://localhost:5000</code></p>
+
+  <div class="card">
+    <h2>Bank: Balance</h2>
+    <button onclick="bankBalance()">Get Balance</button>
+    <pre id="bankOut">Output…</pre>
+  </div>
+
+  <div class="card">
+    <h2>Bank: Transfer</h2>
+    <input id="amount" value="25" />
+    <button onclick="bankTransfer()">Transfer</button>
+    <pre id="bankTxOut">Output…</pre>
+  </div>
+
+  <div class="card">
+    <h2>Hospital: Vitals</h2>
+    <button onclick="hospitalVitals()">Get Vitals</button>
+    <pre id="hospOut">Output…</pre>
+  </div>
+
+  <div class="card">
+    <h2>Flask: Risk Score</h2>
+    <button onclick="riskScore()">Get Risk Score</button>
+    <pre id="riskOut">Output…</pre>
+  </div>
+
+<script>
+const NODE = "http://localhost:3000";
+const FLASK = "http://localhost:5000";
+
+async function bankBalance(){
+  const r = await fetch(`${NODE}/bank/balance`);
+  document.getElementById("bankOut").textContent = JSON.stringify(await r.json(), null, 2);
+}
+async function bankTransfer(){
+  const amount = document.getElementById("amount").value;
+  const r = await fetch(`${NODE}/bank/transfer`, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({amount})});
+  document.getElementById("bankTxOut").textContent = JSON.stringify(await r.json(), null, 2);
+}
+async function hospitalVitals(){
+  const r = await fetch(`${NODE}/hospital/vitals`);
+  document.getElementById("hospOut").textContent = JSON.stringify(await r.json(), null, 2);
+}
+async function riskScore(){
+  const r = await fetch(`${FLASK}/risk-score`);
+  document.getElementById("riskOut").textContent = JSON.stringify(await r.json(), null, 2);
+}
+</script>
+</body>
+</html>
