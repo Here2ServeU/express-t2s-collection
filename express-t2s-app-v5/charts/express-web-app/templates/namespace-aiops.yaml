@@ -1,8 +1,0 @@
-{{- if .Values.aiops.enabled }}
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ .Values.aiops.namespace }}
-  labels:
-    name: {{ .Values.aiops.namespace }}
-{{- end }}
